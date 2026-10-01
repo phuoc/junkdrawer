@@ -19,6 +19,7 @@ export function openDb(file: string) {
       kind       TEXT NOT NULL DEFAULT 'unsorted',  -- todo | note | unsorted
       category   TEXT NOT NULL DEFAULT 'unsorted',
       title      TEXT,                              -- short label for long notes
+      emoji      TEXT,                              -- one emoji for the entry, picked while sorting
       done       INTEGER NOT NULL DEFAULT 0,
       sorted_by  TEXT,                              -- ai | rules | null while pending
       created_at INTEGER NOT NULL,
@@ -26,6 +27,9 @@ export function openDb(file: string) {
     );
     CREATE INDEX IF NOT EXISTS items_created ON items(created_at DESC);
   `);
+  // migrations for databases created by earlier versions
+  const columns = (db.prepare(`PRAGMA table_info(items)`).all() as { name: string }[]).map((c) => c.name);
+  if (!columns.includes("emoji")) db.exec(`ALTER TABLE items ADD COLUMN emoji TEXT`);
 
   const q = {
     insert: db.prepare(`INSERT INTO items (id, text, created_at, updated_at) VALUES (?, ?, ?, ?)`),
@@ -36,7 +40,7 @@ export function openDb(file: string) {
        WHERE category != 'unsorted' GROUP BY category ORDER BY n DESC LIMIT 40`
     ),
     sort: db.prepare(
-      `UPDATE items SET kind = ?, category = ?, title = ?, sorted_by = ?, updated_at = ?
+      `UPDATE items SET kind = ?, category = ?, title = ?, emoji = ?, sorted_by = ?, updated_at = ?
        WHERE id = ?`
     ),
     done: db.prepare(`UPDATE items SET done = ?, updated_at = ? WHERE id = ?`),
@@ -61,8 +65,8 @@ export function openDb(file: string) {
     get,
     list: () => q.all.all().map((r) => toItem(r)!),
     categories: () => q.categories.all().map((r) => (r as { category: string }).category),
-    setSort(id: string, { kind, category, title }: Sorting, sortedBy: "ai" | "rules") {
-      q.sort.run(kind, category, title ?? null, sortedBy, Date.now(), id);
+    setSort(id: string, { kind, category, title, emoji }: Sorting, sortedBy: "ai" | "rules") {
+      q.sort.run(kind, category, title ?? null, emoji ?? null, sortedBy, Date.now(), id);
       return get(id);
     },
     setDone(id: string, done: boolean) {

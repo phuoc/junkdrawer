@@ -44,9 +44,10 @@ interface Props {
   onRemove(item: Item): void;
   /** Called after any pointer interaction so the capture box can take focus back. */
   onInteract(): void;
+  showEmoji: boolean;
 }
 
-export function Board({ items, filter, query, onToggle, onRemove, onInteract }: Props) {
+export function Board({ items, filter, query, onToggle, onRemove, onInteract, showEmoji }: Props) {
   // Offsets and view change on every pointer move, so they live in plain state
   // and are saved when a gesture ends.
   const [offsets, setOffsets] = useState<Offsets>(() => readStored(OFFSETS, {}));
@@ -267,7 +268,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract }: 
             style={at(c, c.tilt)}
             onPointerDown={startNode(c.item.id)}
           >
-            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} />
+            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
           </div>
         ))}
       </div>

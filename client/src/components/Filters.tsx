@@ -21,9 +21,11 @@ interface Props {
   /** Only passed on desktop, where the board is available. */
   layout?: Layout;
   onLayout(l: Layout): void;
+  showEmoji: boolean;
+  onShowEmoji(on: boolean): void;
 }
 
-export function Filters({ filter, onFilter, query, onQuery, onClearQuery, findRef, layout, onLayout }: Props) {
+export function Filters({ filter, onFilter, query, onQuery, onClearQuery, findRef, layout, onLayout, showEmoji, onShowEmoji }: Props) {
   return (
     <nav id="filters">
       {FILTERS.map(([f, label]) => (
@@ -41,6 +43,15 @@ export function Filters({ filter, onFilter, query, onQuery, onClearQuery, findRe
         onChange={(e) => onQuery(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && onClearQuery()}
       />
+      <button
+        type="button"
+        className={`emoji-toggle${showEmoji ? " on" : ""}`}
+        aria-pressed={showEmoji}
+        title={showEmoji ? "hide emojis" : "show emojis"}
+        onClick={() => onShowEmoji(!showEmoji)}
+      >
+        EMOJI {showEmoji ? "ON" : "OFF"}
+      </button>
       {layout && (
         <button type="button" className="layout-toggle" onClick={() => onLayout(layout === "board" ? "list" : "board")}>
           {layout === "board" ? "LIST" : "BOARD"}

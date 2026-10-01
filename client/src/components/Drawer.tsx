@@ -10,9 +10,10 @@ interface Props {
   query: string;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  showEmoji: boolean;
 }
 
-export function Drawer({ items, filter, query, onToggle, onRemove }: Props) {
+export function Drawer({ items, filter, query, onToggle, onRemove, showEmoji }: Props) {
   const shown = items.filter((x) => matches(x, filter, query));
 
   if (!shown.length) {
@@ -49,7 +50,7 @@ export function Drawer({ items, filter, query, onToggle, onRemove }: Props) {
               <small>{list.length}</small>
             </h2>
             {list.map((x) => (
-              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} />
+              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
             ))}
           </section>
         );

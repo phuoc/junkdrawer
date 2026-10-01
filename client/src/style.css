@@ -308,3 +308,32 @@ main.board-mode { max-width: none; padding: 0; }
 .board-tools button.on, .board-tools button.arm { background: var(--fg); color: var(--bg); }
 
 .layout-toggle { margin-left: auto; }
+
+/* ---- emojis ---- */
+.emoji {
+  flex: none;
+  font-size: 22px;
+  line-height: 28px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+/* on the board, a sticker slapped on the card's top-right corner */
+.card .emoji {
+  position: absolute;
+  top: -18px;
+  right: -16px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  line-height: 1;
+  background: var(--bg);
+  border: var(--line);
+  border-radius: 50%;
+  transform: rotate(8deg);
+  z-index: 1;
+  pointer-events: none;
+}
+.card .del { margin-right: 14px; } /* keep DEL clear of the sticker */
+.item.done .emoji { filter: grayscale(1); opacity: 0.5; }
+.emoji-toggle:not(.on) { text-decoration: line-through; }

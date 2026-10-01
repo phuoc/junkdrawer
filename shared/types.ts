@@ -7,6 +7,8 @@ export interface Item {
   category: string;
   /** Short label for long notes. */
   title: string | null;
+  /** Picked while sorting; null for older entries (the client falls back to keywords). */
+  emoji: string | null;
   done: boolean;
   /** Who sorted it; null while sorting is pending. */
   sorted_by: "ai" | "rules" | null;
@@ -18,6 +20,7 @@ export interface Sorting {
   kind: "todo" | "note";
   category: string;
   title: string | null;
+  emoji: string | null;
 }
 
 export type Sorter = "ai" | "rules";

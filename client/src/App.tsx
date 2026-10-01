@@ -18,6 +18,7 @@ export function App() {
   // The board needs room and a mouse; phones and tablets always get the list.
   const desktop = useMediaQuery("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
   const [layout, setLayout] = useStoredState<Layout>("jd-layout", "board");
+  const [showEmoji, setShowEmoji] = useStoredState("jd-emoji", true);
   const board = desktop && layout === "board" && !needsLogin;
   const captureRef = useRef<HTMLTextAreaElement>(null);
   const findRef = useRef<HTMLInputElement>(null);
@@ -66,6 +67,8 @@ export function App() {
               findRef={findRef}
               layout={desktop ? layout : undefined}
               onLayout={refocusAfter(setLayout)}
+              showEmoji={showEmoji}
+              onShowEmoji={refocusAfter(setShowEmoji)}
             />
           </>
         )}
@@ -83,10 +86,11 @@ export function App() {
           onToggle={refocusAfter(toggle)}
           onRemove={refocusAfter(remove)}
           onInteract={focusCapture}
+          showEmoji={showEmoji}
         />
       ) : (
         !needsLogin && (
-          <Drawer items={items} filter={filter} query={query} onToggle={refocusAfter(toggle)} onRemove={refocusAfter(remove)} />
+          <Drawer items={items} filter={filter} query={query} onToggle={refocusAfter(toggle)} onRemove={refocusAfter(remove)} showEmoji={showEmoji} />
         )
       )}
     </main>

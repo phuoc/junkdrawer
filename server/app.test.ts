@@ -4,6 +4,11 @@ import type { AddressInfo } from "node:net";
 import { openDb } from "./db.ts";
 import { createApp } from "./app.ts";
 import { classifyByRules, type Classifier } from "./classify.ts";
+import { emojiFor, isEmoji } from "../shared/emoji.ts";
+import { DatabaseSync } from "node:sqlite";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 test("rules: short lines are todos, long or idea-like text are notes", () => {
   assert.equal(classifyByRules("buy milk").kind, "todo");
@@ -29,7 +34,7 @@ async function start(passcode = "") {
     mode: "ai",
     classify: async (text, cats) => {
       calls.push({ text, cats });
-      return { kind: "note", category: "ideas", title: null, sortedBy: "ai" };
+      return { kind: "note", category: "ideas", title: null, emoji: "💡", sortedBy: "ai" };
     },
   };
   const server = createApp({ db, classifier, passcode }).listen(0);
@@ -63,6 +68,7 @@ test("post, sort in background, toggle, delete", async (t) => {
   assert.equal(items.length, 1);
   assert.equal(items[0].kind, "todo"); // forced prefix wins over classifier
   assert.equal(items[0].category, "ideas");
+  assert.equal(items[0].emoji, "💡");
   assert.equal(calls.length, 1);
 
   res = await req("PATCH", "/api/items/abcdefgh-1", { done: true });
@@ -83,4 +89,34 @@ test("passcode gates the api", async (t) => {
   assert.equal(ok.status, 200);
   const cookie = ok.headers.get("set-cookie")!.split(";")[0];
   assert.equal((await req("GET", "/api/items", undefined, cookie)).status, 200);
+});
+
+test("emoji keywords: subject over action, and only real emojis pass validation", () => {
+  assert.equal(emojiFor("buy milk"), "🥛");
+  assert.equal(emojiFor("call the dentist to reschedule"), "🦷");
+  assert.equal(emojiFor("renew passport before march"), "🛂");
+  assert.equal(emojiFor("book flights to Lisbon"), "✈️");
+  assert.equal(emojiFor("idea: a junk drawer app"), "💡");
+  assert.equal(emojiFor("Meeting thoughts:\nask Sam about the budget"), "🗓️");
+  assert.equal(emojiFor("zxqv"), null);
+  assert.equal(classifyByRules("buy milk").emoji, "🥛");
+
+  for (const ok of ["🥛", "🦷", "✈️", "👨‍👩‍👧", "🇵🇹"]) assert.ok(isEmoji(ok), ok);
+  for (const bad of ["", "milk", "🥛🥛", "a🥛", null, 5]) assert.ok(!isEmoji(bad), String(bad));
+});
+
+test("databases from before emojis get the column added", () => {
+  const file = join(mkdtempSync(join(tmpdir(), "jd-")), "old.db");
+  const old = new DatabaseSync(file);
+  old.exec(`CREATE TABLE items (id TEXT PRIMARY KEY, text TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'unsorted',
+    category TEXT NOT NULL DEFAULT 'unsorted', title TEXT, done INTEGER NOT NULL DEFAULT 0, sorted_by TEXT,
+    created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`);
+  old.exec(`INSERT INTO items (id, text, created_at, updated_at) VALUES ('old-item-1', 'buy milk', 1, 1)`);
+  old.close();
+
+  const db = openDb(file);
+  assert.equal(db.get("old-item-1")!.emoji, null);
+  db.setSort("old-item-1", { kind: "todo", category: "shopping", title: null, emoji: "🥛" }, "ai");
+  assert.equal(db.get("old-item-1")!.emoji, "🥛");
+  db.close();
 });

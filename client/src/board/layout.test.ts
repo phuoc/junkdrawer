@@ -10,6 +10,7 @@ const item = (text: string, category: string, extra: Partial<Item> = {}): Item =
   kind: "todo",
   category,
   title: null,
+  emoji: null,
   done: false,
   sorted_by: "ai",
   created_at: t++,

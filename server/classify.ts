@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Sorter, Sorting } from "../shared/types.ts";
+import { emojiFor, isEmoji } from "../shared/emoji.ts";
 
 export interface Classifier {
   mode: Sorter;
@@ -41,7 +42,7 @@ export function classifyByRules(text: string): Sorting {
     category = "shopping";
   else if (/^idea\b/i.test(t)) category = "ideas";
 
-  return { kind, category, title: null };
+  return { kind, category, title: null, emoji: emojiFor(t) };
 }
 
 // --- AI ----------------------------------------------------------------------
@@ -52,8 +53,9 @@ const SCHEMA = {
     kind: { type: "string", enum: ["todo", "note"] },
     category: { type: "string" },
     title: { type: ["string", "null"] },
+    emoji: { type: "string" },
   },
-  required: ["kind", "category", "title"],
+  required: ["kind", "category", "title", "emoji"],
   additionalProperties: false,
 };
 
@@ -68,7 +70,9 @@ If the entry starts with "t:" it is a todo; "n:" it is a note.
 
 category: one short lowercase label (1-2 words) for the drawer compartment. Strongly prefer reusing one of the existing categories when it fits, so the drawer stays tidy. Create a new one only when nothing fits. Good examples: shopping, home, work, health, money, ideas, people, errands, learning, travel, misc.
 
-title: for notes longer than ~60 characters, a 3-7 word label that captures the gist, written in the same language as the entry. Otherwise null.`;
+title: for notes longer than ~60 characters, a 3-7 word label that captures the gist, written in the same language as the entry. Otherwise null.
+
+emoji: exactly one emoji for the thing the entry is about, so it can be spotted at a glance. Pick the object or subject, not the action: "buy milk" → 🥛, "call the dentist" → 🦷, "renew passport" → 🛂, "fix the leaking tap" → 🚰, "wifi password" → 📶. Use 📝 only if nothing more specific fits.`;
 
 export function createClassifier({
   apiKey = process.env.ANTHROPIC_API_KEY,
@@ -100,6 +104,7 @@ export function createClassifier({
         kind: parsed.kind === "note" ? "note" : "todo",
         category: normalizeCategory(parsed.category),
         title: parsed.title || null,
+        emoji: isEmoji(parsed.emoji) ? parsed.emoji : emojiFor(text),
         sortedBy: "ai",
       } as const;
     } catch (err) {
