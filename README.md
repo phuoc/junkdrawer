@@ -27,7 +27,7 @@ ANTHROPIC_API_KEY=sk-ant-... JUNK_PASSCODE=pick-something npm start
 |---|---|
 | `ANTHROPIC_API_KEY` | Turns on AI sorting. Without it, a simple length/keyword rule sorts entries. |
 | `JUNK_PASSCODE` | Passcode for the login screen. Each device stays logged in for about a year. **Set this on any public deployment.** |
-| `JUNK_MODEL` | Claude model to use (default `claude-opus-5-5`). |
+| `JUNK_MODEL` | Claude model to use (default `claude-haiku-4-5`: fast and cheap, which suits one-line sorting). |
 | `JUNK_DB` | SQLite file path (default `./data/junk.db`). |
 | `PORT` | default `3000` |
 
