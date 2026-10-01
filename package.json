@@ -4,16 +4,28 @@
   "private": true,
   "description": "A junk drawer for notes and todos. Throw it in, AI sorts it.",
   "type": "module",
-  "main": "server.js",
+  "main": "server/index.ts",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.18"
   },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server.js",
-    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
-    "test": "node --disable-warning=ExperimentalWarning --test"
+    "dev": "node --disable-warning=ExperimentalWarning --watch server/index.ts & vite",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
+    "start": "node --disable-warning=ExperimentalWarning server/index.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test \"server/**/*.test.ts\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0"
+    "@anthropic-ai/sdk": "^0.131.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2"
   }
 }

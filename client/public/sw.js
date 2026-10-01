@@ -1,6 +1,8 @@
 // Minimal offline shell: cache the app files, always go to the network for /api.
-const CACHE = "jd-v1";
-const SHELL = ["/", "/app.js", "/style.css", "/icon.svg", "/manifest.webmanifest"];
+const CACHE = "jd-v2";
+// Vite fingerprints JS/CSS, so only the entry page and static files are listed;
+// the bundles get cached on first load by the fetch handler below.
+const SHELL = ["/", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

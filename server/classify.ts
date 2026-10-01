@@ -1,4 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Sorter, Sorting } from "../shared/types.ts";
+
+export interface Classifier {
+  mode: Sorter;
+  classify(text: string, existingCategories?: string[]): Promise<Sorting & { sortedBy: Sorter }>;
+}
 
 // --- Rules -------------------------------------------------------------------
 // Used as the fallback when no API key is configured or the API call fails,
@@ -7,7 +13,7 @@ import Anthropic from "@anthropic-ai/sdk";
 const ACTION_START =
   /^(buy|get|call|email|text|pay|book|fix|clean|send|pick up|return|order|schedule|renew|cancel|check|finish|write|read|watch|make|bring|remember|remind|ask|submit|sign|print|wash|reply|install|update|go|take|try|find|learn)\b/i;
 
-export function forcedKind(text) {
+export function forcedKind(text: string): { kind: "todo" | "note"; rest: string } | null {
   const m = /^\s*(t|todo|n|note)\s*:\s*/i.exec(text);
   if (!m) return null;
   return { kind: m[1][0].toLowerCase() === "t" ? "todo" : "note", rest: text.slice(m[0].length) };
@@ -20,11 +26,11 @@ export function forcedKind(text) {
  * - note: multiple lines, long text, or anything reading like a thought,
  *   idea, fact or reference ("wifi password is ...", "idea: ...").
  */
-export function classifyByRules(text) {
+export function classifyByRules(text: string): Sorting {
   const forced = forcedKind(text);
   const t = (forced ? forced.rest : text).trim();
   const words = t.split(/\s+/).length;
-  let kind;
+  let kind: Sorting["kind"];
   if (forced) kind = forced.kind;
   else if (t.includes("\n") || t.length > 90 || words > 14) kind = "note";
   else if (/^(idea|note|thought|fyi|quote)\b/i.test(t) || /\b(is|are|was)\b.*\d/.test(t)) kind = "note";
@@ -64,12 +70,15 @@ category: one short lowercase label (1-2 words) for the drawer compartment. Stro
 
 title: for notes longer than ~60 characters, a 3-7 word label that captures the gist, written in the same language as the entry. Otherwise null.`;
 
-export function createClassifier({ apiKey = process.env.ANTHROPIC_API_KEY, model = process.env.JUNK_MODEL || "claude-haiku-4-5" } = {}) {
+export function createClassifier({
+  apiKey = process.env.ANTHROPIC_API_KEY,
+  model = process.env.JUNK_MODEL || "claude-haiku-4-5",
+}: { apiKey?: string; model?: string } = {}): Classifier {
   if (!apiKey) return { mode: "rules", classify: async (text) => ({ ...classifyByRules(text), sortedBy: "rules" }) };
 
   const client = new Anthropic({ apiKey, timeout: 60_000, maxRetries: 2 });
 
-  async function classify(text, existingCategories = []) {
+  async function classify(text: string, existingCategories: string[] = []) {
     try {
       const res = await client.messages.create({
         model,
@@ -85,26 +94,27 @@ export function createClassifier({ apiKey = process.env.ANTHROPIC_API_KEY, model
       });
       if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") throw new Error(`stop_reason ${res.stop_reason}`);
       const out = res.content.find((b) => b.type === "text");
-      const parsed = JSON.parse(out.text);
+      if (!out) throw new Error("no text in response");
+      const parsed = JSON.parse(out.text) as Partial<Sorting>;
       return {
         kind: parsed.kind === "note" ? "note" : "todo",
         category: normalizeCategory(parsed.category),
         title: parsed.title || null,
         sortedBy: "ai",
-      };
+      } as const;
     } catch (err) {
       if (err instanceof Anthropic.AuthenticationError) console.error("[classify] invalid ANTHROPIC_API_KEY");
       else if (err instanceof Anthropic.RateLimitError) console.error("[classify] rate limited");
       else if (err instanceof Anthropic.APIError) console.error(`[classify] API error ${err.status}: ${err.message}`);
-      else console.error("[classify]", err.message);
-      return { ...classifyByRules(text), sortedBy: "rules" };
+      else console.error("[classify]", (err as Error).message);
+      return { ...classifyByRules(text), sortedBy: "rules" } as const;
     }
   }
 
   return { mode: "ai", classify };
 }
 
-function normalizeCategory(c) {
-  const s = String(c || "").toLowerCase().replace(/[^\p{L}\p{N} &-]/gu, "").trim().slice(0, 24);
+function normalizeCategory(c: unknown): string {
+  const s = String(c ?? "").toLowerCase().replace(/[^\p{L}\p{N} &-]/gu, "").trim().slice(0, 24);
   return s || "misc";
 }

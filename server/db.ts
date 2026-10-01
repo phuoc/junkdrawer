@@ -2,8 +2,13 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import type { Item, Sorting } from "../shared/types.ts";
 
-export function openDb(file) {
+type Row = Omit<Item, "done"> & { done: number };
+
+export type Db = ReturnType<typeof openDb>;
+
+export function openDb(file: string) {
   if (file !== ":memory:") mkdirSync(dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(`
@@ -23,9 +28,7 @@ export function openDb(file) {
   `);
 
   const q = {
-    insert: db.prepare(
-      `INSERT INTO items (id, text, created_at, updated_at) VALUES (?, ?, ?, ?)`
-    ),
+    insert: db.prepare(`INSERT INTO items (id, text, created_at, updated_at) VALUES (?, ?, ?, ?)`),
     get: db.prepare(`SELECT * FROM items WHERE id = ?`),
     all: db.prepare(`SELECT * FROM items ORDER BY created_at DESC`),
     categories: db.prepare(
@@ -40,28 +43,33 @@ export function openDb(file) {
     del: db.prepare(`DELETE FROM items WHERE id = ?`),
   };
 
-  const row = (r) => r && { ...r, done: !!r.done };
+  const toItem = (r: unknown): Item | undefined => {
+    if (!r) return undefined;
+    const row = r as Row;
+    return { ...row, done: !!row.done };
+  };
+  const get = (id: string) => toItem(q.get.get(id));
 
   return {
-    add(text, id = randomUUID()) {
-      const existing = q.get.get(id);
-      if (existing) return row(existing); // idempotent: offline retries reuse the id
+    add(text: string, id: string = randomUUID()): Item {
+      const existing = get(id);
+      if (existing) return existing; // idempotent: offline retries reuse the id
       const now = Date.now();
       q.insert.run(id, text, now, now);
-      return row(q.get.get(id));
+      return get(id)!;
     },
-    get: (id) => row(q.get.get(id)),
-    list: () => q.all.all().map(row),
-    categories: () => q.categories.all().map((r) => r.category),
-    setSort(id, { kind, category, title }, sortedBy) {
+    get,
+    list: () => q.all.all().map((r) => toItem(r)!),
+    categories: () => q.categories.all().map((r) => (r as { category: string }).category),
+    setSort(id: string, { kind, category, title }: Sorting, sortedBy: "ai" | "rules") {
       q.sort.run(kind, category, title ?? null, sortedBy, Date.now(), id);
-      return row(q.get.get(id));
+      return get(id);
     },
-    setDone(id, done) {
+    setDone(id: string, done: boolean) {
       q.done.run(done ? 1 : 0, Date.now(), id);
-      return row(q.get.get(id));
+      return get(id);
     },
-    remove: (id) => q.del.run(id).changes > 0,
+    remove: (id: string) => Number(q.del.run(id).changes) > 0,
     close: () => db.close(),
   };
 }
