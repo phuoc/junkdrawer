@@ -157,3 +157,183 @@ button { cursor: pointer; }
 @media (hover: none) { .del { opacity: 0.6; } }
 
 .empty { border: var(--line); border-style: dashed; padding: 24px; text-align: center; }
+
+/* ======================= desktop board (mind map) ======================= */
+
+main.board-mode { max-width: none; padding: 0; }
+
+.board-mode .panel {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  width: 420px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  background: var(--bg);
+  border: var(--line);
+  box-shadow: 8px 8px 0 var(--fg);
+  padding: 14px 14px 4px;
+}
+.board-mode #add { position: static; padding-top: 0; }
+.board-mode #text { font-size: 18px; padding: 12px; box-shadow: 5px 5px 0 var(--fg); }
+.board-mode #text:focus { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--fg); }
+.board-mode .hint { margin-bottom: 10px; }
+.board-mode #filters { margin: 4px 0 12px; }
+.board-mode #filters button, .board-mode #find { padding: 4px 8px; font-size: 12px; }
+
+.board {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--fg) 1px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+.board:active { cursor: grabbing; }
+
+.world {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+/* ---- links ---- */
+.links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.links line { stroke: var(--fg); stroke-linecap: square; transition: opacity 0.2s; }
+.links .trunk { stroke-width: 5; }
+.links .branch { stroke-width: 2; }
+.links .branch.pending { stroke-dasharray: 6 6; }
+.links .dim { opacity: 0.12; }
+.links .related { transition: opacity 0.2s; }
+.links .related path { fill: none; stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 2 5; }
+.links .related text {
+  font: 700 11px var(--font);
+  text-anchor: middle;
+  fill: var(--fg);
+  stroke: var(--bg);
+  stroke-width: 4px;
+  paint-order: stroke;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- nodes ---- */
+.node, .card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* new items glide from the centre to their compartment once sorted */
+  transition: transform 0.7s cubic-bezier(0.2, 0.9, 0.2, 1.1), opacity 0.2s;
+}
+.node.dragging, .card.dragging { transition: none; z-index: 6; }
+
+.root {
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 900;
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+  padding: 18px 22px;
+  outline: 4px solid var(--fg);
+  outline-offset: 6px;
+  white-space: nowrap;
+}
+
+.hub {
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 900;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 14px;
+  white-space: nowrap;
+  cursor: move;
+  z-index: 2;
+}
+.hub small { font-size: 11px; opacity: 0.7; margin-left: 6px; }
+
+.card {
+  width: 230px;
+  background: var(--bg);
+  border: var(--line);
+  box-shadow: 6px 6px 0 var(--fg);
+  cursor: grab;
+  z-index: 1;
+}
+.card:hover { z-index: 5; }
+.card.dragging { cursor: grabbing; box-shadow: 12px 12px 0 var(--fg); }
+.card.dim { opacity: 0.15; }
+.card .item { border-top: 0; padding: 10px; gap: 10px; font-size: 14px; }
+.card .box, .card .tag { width: 22px; height: 22px; line-height: 16px; }
+.card .del { padding: 2px 4px; font-size: 10px; }
+.card .item.note .body p { -webkit-line-clamp: 5; }
+
+/* ---- toolbar ---- */
+.board-tools {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: var(--line);
+  box-shadow: 6px 6px 0 var(--fg);
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: default;
+}
+.board-tools span { padding: 0 4px; }
+.board-tools .gap { width: 8px; }
+.board-tools button {
+  border: 2px solid var(--fg);
+  background: var(--bg);
+  border-radius: 0;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 30px;
+}
+.board-tools button.on, .board-tools button.arm { background: var(--fg); color: var(--bg); }
+
+.layout-toggle { margin-left: auto; }
+
+/* ---- emojis ---- */
+.emoji {
+  flex: none;
+  font-size: 22px;
+  line-height: 28px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+/* on the board, a sticker slapped on the card's top-right corner */
+.card .emoji {
+  position: absolute;
+  top: -18px;
+  right: -16px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 21px;
+  line-height: 1;
+  background: var(--bg);
+  border: var(--line);
+  border-radius: 50%;
+  transform: rotate(8deg);
+  z-index: 1;
+  pointer-events: none;
+}
+.card .del { margin-right: 14px; } /* keep DEL clear of the sticker */
+.item.done .emoji { filter: grayscale(1); opacity: 0.5; }
+.emoji-toggle:not(.on) { text-decoration: line-through; }

@@ -36,6 +36,7 @@ const asLocalItem = (p: Pending): Item => ({
   kind: "unsorted",
   category: "unsorted",
   title: null,
+  emoji: null,
   done: false,
   sorted_by: null,
   created_at: Date.now(),

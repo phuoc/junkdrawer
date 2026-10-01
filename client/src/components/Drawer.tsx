@@ -1,5 +1,5 @@
 import type { Item } from "../../../shared/types.ts";
-import type { Filter } from "./Filters.tsx";
+import { matches, type Filter } from "../filters.ts";
 import { ItemRow } from "./ItemRow.tsx";
 
 const PENDING = "sorting…";
@@ -10,19 +10,11 @@ interface Props {
   query: string;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  showEmoji: boolean;
 }
 
-function visible(x: Item, filter: Filter, query: string) {
-  if (query && !`${x.text} ${x.title ?? ""} ${x.category}`.toLowerCase().includes(query.toLowerCase())) return false;
-  if (filter === "done") return x.done;
-  if (x.done) return false;
-  if (filter === "todo") return x.kind === "todo" || x.kind === "unsorted";
-  if (filter === "note") return x.kind === "note" || x.kind === "unsorted";
-  return true;
-}
-
-export function Drawer({ items, filter, query, onToggle, onRemove }: Props) {
-  const shown = items.filter((x) => visible(x, filter, query));
+export function Drawer({ items, filter, query, onToggle, onRemove, showEmoji }: Props) {
+  const shown = items.filter((x) => matches(x, filter, query));
 
   if (!shown.length) {
     return (
@@ -58,7 +50,7 @@ export function Drawer({ items, filter, query, onToggle, onRemove }: Props) {
               <small>{list.length}</small>
             </h2>
             {list.map((x) => (
-              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} />
+              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
             ))}
           </section>
         );

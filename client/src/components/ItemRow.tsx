@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import type { Item } from "../../../shared/types.ts";
+import { emojiFor } from "../../../shared/emoji.ts";
 
 interface Props {
   item: Item;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  showEmoji: boolean;
 }
 
-export function ItemRow({ item, onToggle, onRemove }: Props) {
+export function ItemRow({ item, onToggle, onRemove, showEmoji }: Props) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
 
@@ -18,6 +20,8 @@ export function ItemRow({ item, onToggle, onRemove }: Props) {
     return () => window.clearTimeout(t);
   }, [armed]);
 
+  // older entries have no stored emoji; guess one from the text
+  const emoji = showEmoji && item.sorted_by ? (item.emoji ?? emojiFor(item.text)) : null;
   const cls = ["item", item.kind, item.done && "done", !item.sorted_by && "pending", open && "open"].filter(Boolean).join(" ");
 
   return (
@@ -34,6 +38,11 @@ export function ItemRow({ item, onToggle, onRemove }: Props) {
         <p>{item.text}</p>
       </div>
 
+      {emoji && (
+        <span className="emoji" aria-hidden="true">
+          {emoji}
+        </span>
+      )}
       <button
         type="button"
         className={armed ? "del arm" : "del"}

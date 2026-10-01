@@ -10,8 +10,21 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 - To override the sorting, start with `t:` (force a todo) or `n:` (force a note).
 - Claude reuses your existing categories where it can, so the drawer stays tidy.
 - **Find** searches every entry. **Done** shows ticked-off todos.
+- **Emojis:** each entry gets an emoji for what it's about (milk → 🥛, dentist → 🦷), shown on the card's top-right corner. Claude picks it while sorting; with the rule-based sorter, and for entries saved before emojis existed, a built-in keyword list fills in. **EMOJI ON / OFF** turns them off on that device.
 - Works offline: entries are kept on the device and sent when you're back online.
 - Install it to your home screen (Safari → Share → Add to Home Screen) so it opens like an app.
+
+## Desktop board
+
+On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-map board instead of a list. **LIST / BOARD** switches between them; phones and tablets always get the list.
+
+- **JUNK DRAWER** sits in the middle, with one black hub per category around it and each entry's card hanging off its hub.
+- A new entry hangs off the centre on a dashed line while it's being sorted, then glides to its hub.
+- Drag a card to move it; drag a hub to move its whole cluster. Drag the background (or scroll) to pan; pinch or ctrl+scroll to zoom.
+- **Links:** ALL also draws dotted lines between entries in *different* categories that share a word (for example "mom" in shopping and people), labelled with that word. HUBS draws only the hub lines; OFF hides lines.
+- Search and filters fade non-matching cards instead of removing them, so the map keeps its shape. Ticked-off todos leave the board (see them under DONE).
+- **FIT** frames everything on screen. **TIDY** undoes all your dragging.
+- Where you dragged things, the zoom, and the link mode are remembered per computer (in the browser), not synced between devices.
 
 ## Stack
 
@@ -28,7 +41,7 @@ Needs Node 22.18+.
 npm install
 cp .env.example .env    # optional: fill in ANTHROPIC_API_KEY
 npm run dev             # API on :3000, Vite on :5173 (proxies /api)
-npm test                # server tests
+npm test                # server + board layout tests
 npm run build           # typecheck + build the client into dist/
 npm start               # serve dist/ and the API on :3000
 ```
