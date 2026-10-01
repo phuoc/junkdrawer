@@ -1,0 +1,13 @@
+services:
+  junkdrawer:
+    build: .
+    container_name: junkdrawer
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - junkdata:/data
+
+volumes:
+  junkdata:
