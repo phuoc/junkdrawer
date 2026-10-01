@@ -1,5 +1,5 @@
 import type { Item } from "../../../shared/types.ts";
-import type { Filter } from "./Filters.tsx";
+import { matches, type Filter } from "../filters.ts";
 import { ItemRow } from "./ItemRow.tsx";
 
 const PENDING = "sorting…";
@@ -12,17 +12,8 @@ interface Props {
   onRemove(item: Item): void;
 }
 
-function visible(x: Item, filter: Filter, query: string) {
-  if (query && !`${x.text} ${x.title ?? ""} ${x.category}`.toLowerCase().includes(query.toLowerCase())) return false;
-  if (filter === "done") return x.done;
-  if (x.done) return false;
-  if (filter === "todo") return x.kind === "todo" || x.kind === "unsorted";
-  if (filter === "note") return x.kind === "note" || x.kind === "unsorted";
-  return true;
-}
-
 export function Drawer({ items, filter, query, onToggle, onRemove }: Props) {
-  const shown = items.filter((x) => visible(x, filter, query));
+  const shown = items.filter((x) => matches(x, filter, query));
 
   if (!shown.length) {
     return (
