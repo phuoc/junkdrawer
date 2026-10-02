@@ -337,3 +337,24 @@ main.board-mode { max-width: none; padding: 0; }
 .card .del { margin-right: 14px; } /* keep DEL clear of the sticker */
 .item.done .emoji { filter: grayscale(1); opacity: 0.5; }
 .emoji-toggle:not(.on) { text-decoration: line-through; }
+
+/* ======================= category colours ======================= */
+/* --cat / --cat-fg are set per compartment from categoryColors.ts;
+   categories without a colour fall back to black on white. */
+
+.compartment { box-shadow: 6px 6px 0 var(--cat, transparent); }
+.compartment h2 { background: var(--cat, var(--fg)); color: var(--cat-fg, var(--bg)); }
+
+.hub { background: var(--cat, var(--fg)); color: var(--cat-fg, var(--bg)); outline: 3px solid var(--fg); }
+.links .trunk, .links .branch { stroke: var(--cat, var(--fg)); }
+.links .branch { stroke-width: 3; }
+.card { box-shadow: 6px 6px 0 var(--cat, var(--fg)); }
+.card.dragging { box-shadow: 12px 12px 0 var(--cat, var(--fg)); }
+/* colour band across the top of each card */
+.card::before {
+  content: "";
+  display: block;
+  height: 7px;
+  background: var(--cat, var(--fg));
+  border-bottom: 2px solid var(--fg);
+}
