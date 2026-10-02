@@ -342,14 +342,12 @@ main.board-mode { max-width: none; padding: 0; }
 /* --cat / --cat-fg are set per compartment from categoryColors.ts;
    categories without a colour fall back to black on white. */
 
-.compartment { box-shadow: 6px 6px 0 var(--cat, transparent); }
+.compartment { box-shadow: 6px 6px 0 var(--fg); }
 .compartment h2 { background: var(--cat, var(--fg)); color: var(--cat-fg, var(--bg)); }
 
 .hub { background: var(--cat, var(--fg)); color: var(--cat-fg, var(--bg)); outline: 3px solid var(--fg); }
 .links .trunk, .links .branch { stroke: var(--cat, var(--fg)); }
 .links .branch { stroke-width: 3; }
-.card { box-shadow: 6px 6px 0 var(--cat, var(--fg)); }
-.card.dragging { box-shadow: 12px 12px 0 var(--cat, var(--fg)); }
 /* colour band across the top of each card */
 .card::before {
   content: "";
