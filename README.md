@@ -2,6 +2,12 @@
 
 A place to throw notes and todos without thinking about where they go. Open it, type, press enter, done. Claude sorts each entry into a **todo** or a **note** and files it in a category (shopping, work, ideas, ...).
 
+<p align="center">
+  <img src="docs/screenshots/desktop.png" alt="Desktop: the mind-map board, with colour-coded category hubs around a central Junk Drawer node and emoji-tagged cards" width="72%">
+  <img src="docs/screenshots/mobile.png" alt="Phone: the list view, with colour-coded category sections and emoji on each entry" width="24%">
+</p>
+<p align="center"><em>Desktop board (left) and phone list (right)</em></p>
+
 ## How it works
 
 - The input is focused as soon as the page opens. **Enter** saves (on the iPhone keyboard too). Shift+Enter adds a new line.
