@@ -1,6 +1,7 @@
 import type { Item } from "../../../shared/types.ts";
 import { matches, type Filter } from "../filters.ts";
 import { ItemRow } from "./ItemRow.tsx";
+import { categoryStyle } from "../categoryColors.ts";
 
 const PENDING = "sorting…";
 
@@ -44,7 +45,7 @@ export function Drawer({ items, filter, query, onToggle, onRemove, showEmoji }: 
       {keys.map((key) => {
         const list = groups.get(key)!;
         return (
-          <section className="compartment" key={key}>
+          <section className="compartment" key={key} style={key === PENDING ? undefined : categoryStyle(key)}>
             <h2>
               <span>{key}</span>
               <small>{list.length}</small>

@@ -3,6 +3,7 @@ import type { Item } from "../../../shared/types.ts";
 import { matches, type Filter } from "../filters.ts";
 import { readStored, useStoredState, writeStored } from "../storage.ts";
 import { ItemRow } from "../components/ItemRow.tsx";
+import { categoryStyle } from "../categoryColors.ts";
 import { bounds, computeLayout, relatedLinks, type Layout, type Offsets, type Point } from "./layout.ts";
 
 type LinkMode = "all" | "hubs" | "off";
@@ -205,6 +206,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
               <line
                 key={h.key}
                 className={`trunk${h.cards.some((c) => matches(c.item, filter, query)) ? "" : " dim"}`}
+                style={categoryStyle(h.category)}
                 x1={0}
                 y1={0}
                 x2={h.x}
@@ -218,6 +220,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
                 <line
                   key={c.item.id}
                   className={`branch${c.hub === "root" ? " pending" : ""}${dim ? " dim" : ""}`}
+                  style={c.item.sorted_by ? categoryStyle(c.item.category) : undefined}
                   x1={from.x}
                   y1={from.y}
                   x2={c.x}
@@ -254,7 +257,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
           <div
             key={h.key}
             className={`node hub${dragging === h.key ? " dragging" : ""}`}
-            style={at(h)}
+            style={{ ...at(h), ...categoryStyle(h.category) }}
             onPointerDown={startNode(h.key)}
           >
             {h.category} <small>{h.cards.length}</small>
@@ -265,7 +268,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
           <div
             key={c.item.id}
             className={`card${dragging === c.item.id ? " dragging" : ""}${matches(c.item, filter, query) ? "" : " dim"}`}
-            style={at(c, c.tilt)}
+            style={{ ...at(c, c.tilt), ...(c.item.sorted_by ? categoryStyle(c.item.category) : {}) }}
             onPointerDown={startNode(c.item.id)}
           >
             <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />

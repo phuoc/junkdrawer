@@ -10,6 +10,7 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 - To override the sorting, start with `t:` (force a todo) or `n:` (force a note).
 - Claude reuses your existing categories where it can, so the drawer stays tidy.
 - **Find** searches every entry. **Done** shows ticked-off todos.
+- **Colour-coded categories:** health is red, shopping blue, travel purple, home orange, work brown, ideas yellow, and errands and priorities green. Close synonyms Claude might use count too (groceries → shopping, fitness → health). Other categories stay black. Change the colours in `client/src/categoryColors.ts`.
 - **Emojis:** each entry gets an emoji for what it's about (milk → 🥛, dentist → 🦷), shown on the card's top-right corner. Claude picks it while sorting; with the rule-based sorter, and for entries saved before emojis existed, a built-in keyword list fills in. **EMOJI ON / OFF** turns them off on that device.
 - Works offline: entries are kept on the device and sent when you're back online.
 - Install it to your home screen (Safari → Share → Add to Home Screen) so it opens like an app.
