@@ -23,11 +23,11 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 
 ## Desktop board
 
-On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-map board instead of a list. **LIST / BOARD** switches between them; phones and tablets always get the list.
+On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-map board instead of a list; phones and tablets open on the list. **LIST / BOARD** switches between them on any device, and each device remembers its choice.
 
 - **JUNK DRAWER** sits in the middle, with one black hub per category around it and each entry's card hanging off its hub.
 - A new entry hangs off the centre on a dashed line while it's being sorted, then glides to its hub.
-- Drag a card to move it; drag a hub to move its whole cluster. Drag the background (or scroll) to pan; pinch or ctrl+scroll to zoom.
+- Drag a card to move it; drag a hub to move its whole cluster. Drag the background (or scroll) to pan; pinch or ctrl+scroll to zoom. On a phone: one finger pans or drags, two fingers pinch to zoom, and the panel and toolbar sit at the top and bottom of the screen.
 - **Links:** ALL also draws dotted lines between entries in *different* categories that share a word (for example "mom" in shopping and people), labelled with that word. HUBS draws only the hub lines; OFF hides lines.
 - Search and filters fade non-matching cards instead of removing them, so the map keeps its shape. Ticked-off todos leave the board (see them under DONE).
 - **FIT** frames everything on screen. **TIDY** undoes all your dragging.

@@ -15,11 +15,12 @@ export function App() {
   const { items, needsLogin, status, add, toggle, remove, login } = useDrawer();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
-  // The board needs room and a mouse; phones and tablets always get the list.
+  // Computers open on the board, phones and tablets on the list; the
+  // LIST / BOARD button switches either way and is remembered per device.
   const desktop = useMediaQuery("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
-  const [layout, setLayout] = useStoredState<Layout>("jd-layout", "board");
+  const [layout, setLayout] = useStoredState<Layout>("jd-layout", desktop ? "board" : "list");
   const [showEmoji, setShowEmoji] = useStoredState("jd-emoji", true);
-  const board = desktop && layout === "board" && !needsLogin;
+  const board = layout === "board" && !needsLogin;
   const captureRef = useRef<HTMLTextAreaElement>(null);
   const findRef = useRef<HTMLInputElement>(null);
 
@@ -65,7 +66,7 @@ export function App() {
               onQuery={setQuery}
               onClearQuery={refocusAfter(() => setQuery(""))}
               findRef={findRef}
-              layout={desktop ? layout : undefined}
+              layout={layout}
               onLayout={refocusAfter(setLayout)}
               showEmoji={showEmoji}
               onShowEmoji={refocusAfter(setShowEmoji)}
