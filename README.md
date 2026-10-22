@@ -63,6 +63,10 @@ npm start               # serve dist/ and the API on :3000
 
 `npm run dev` reads env vars from your shell, not `.env`. Use `export $(cat .env | xargs)` or set them inline.
 
+## claude.ai preview
+
+`npm run build:artifact` builds a single-page version of the app (`dist-artifact/junk-drawer.html`) that runs as a page on claude.ai, for trying it on your phone without hosting anything. It has no server: each person's entries are saved privately in the page's storage, and Claude sorts them through the page using that person's own Claude account. Entries there are separate from your self-hosted drawer, and offline saving and home-screen install aren't available on claude.ai.
+
 ## Self-hosting on Proxmox
 
 The app is one container with one SQLite file. A tiny guest is enough: 1 vCPU, 512 MB RAM, 4 GB disk.

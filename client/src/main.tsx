@@ -9,6 +9,7 @@ createRoot(document.getElementById("root")!).render(
   </StrictMode>
 );
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
+// No service worker in the claude.ai preview: the page frame doesn't allow one.
+if ("serviceWorker" in navigator && import.meta.env.PROD && import.meta.env.MODE !== "artifact") {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Item, Sorter } from "../../shared/types.ts";
 import { api, LoginRequired } from "./api.ts";
+import { StoreUnavailable } from "./artifactApi.ts";
+
+const PREVIEW = import.meta.env.MODE === "artifact";
 
 /** Entries typed but not yet accepted by the server (offline, server down). */
 interface Pending {
@@ -58,6 +61,7 @@ export function useDrawer() {
 
   const fail = useCallback((err: unknown, message: string) => {
     if (err instanceof LoginRequired) setNeedsLogin(true);
+    else if (err instanceof StoreUnavailable) setStatus({ message: "can't open your drawer here: sign in to claude.ai, then reload" });
     else setStatus({ message });
   }, []);
 
@@ -189,7 +193,15 @@ export function useDrawer() {
   }, [refresh, flush]);
 
   const shownStatus: Status | null =
-    status ?? (sorter === "rules" ? { message: "sorting by simple rules — add an ANTHROPIC_API_KEY on the server for AI sorting", soft: true } : null);
+    status ??
+    (sorter === "rules"
+      ? {
+          message: PREVIEW
+            ? "sorting by simple rules: allow this page to use Claude (and reload) for AI sorting"
+            : "sorting by simple rules — add an ANTHROPIC_API_KEY on the server for AI sorting",
+          soft: true,
+        }
+      : null);
 
   return { items, needsLogin, status: shownStatus, add, toggle, remove, login };
 }
