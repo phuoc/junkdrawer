@@ -21,6 +21,12 @@ export function App() {
   const [layout, setLayout] = useStoredState<Layout>("jd-layout", desktop ? "board" : "list");
   const [showEmoji, setShowEmoji] = useStoredState("jd-emoji", true);
   const board = layout === "board" && !needsLogin;
+  // On the board the input panel can fold down to a small tab (remembered per
+  // device), and the map can take the whole screen (for this visit only).
+  const [panelMin, setPanelMin] = useStoredState("jd-panel-min", false);
+  const [full, setFull] = useState(false);
+  const minimized = board && panelMin;
+  const fullscreen = board && full;
   const captureRef = useRef<HTMLTextAreaElement>(null);
   const findRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +49,43 @@ export function App() {
     };
   }, [needsLogin, focusCapture]);
 
+  // Full screen also asks the browser for real full screen where it's allowed
+  // (desktop browsers; most phones and some app views say no, which is fine).
+  const browserFull = useRef(false);
+  const enterFull = useCallback(() => {
+    setFull(true);
+    const req = document.documentElement.requestFullscreen?.bind(document.documentElement);
+    req?.()
+      .then(() => (browserFull.current = true))
+      .catch(() => {});
+  }, []);
+  const exitFull = useCallback(() => {
+    setFull(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    browserFull.current = false;
+  }, []);
+  useEffect(() => {
+    // leaving the browser's full screen (Esc, a gesture) leaves ours too
+    const onChange = () => {
+      if (!document.fullscreenElement && browserFull.current) exitFull();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && full && exitFull();
+    document.addEventListener("fullscreenchange", onChange);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [full, exitFull]);
+  useEffect(() => {
+    if (!board && full) exitFull(); // switching to the list ends full screen
+  }, [board, full, exitFull]);
+
+  const openPanel = () => {
+    setPanelMin(false);
+    window.setTimeout(focusCapture, 0);
+  };
+
   // After any click (tick, delete, filter), hand focus back to the capture box.
   const refocusAfter =
     <A extends unknown[]>(fn: (...args: A) => unknown) =>
@@ -53,7 +96,18 @@ export function App() {
 
   return (
     <main className={board ? "board-mode" : undefined}>
-      <div className="panel">
+      <div className={`panel${minimized ? " minimized" : ""}`} hidden={fullscreen}>
+        {minimized && (
+          <button type="button" className="panel-open" onClick={openPanel} aria-label="open the input panel">
+            JUNK DRAWER <span aria-hidden="true">＋</span>
+          </button>
+        )}
+        {board && !minimized && (
+          <button type="button" className="panel-min" onClick={() => setPanelMin(true)} aria-label="minimize the input panel" title="minimize">
+            –
+          </button>
+        )}
+        <div className="panel-body" hidden={minimized}>
         {needsLogin ? (
           <Login onSubmit={login} />
         ) : (
@@ -78,6 +132,7 @@ export function App() {
             {status.message}
           </div>
         )}
+        </div>
       </div>
       {board ? (
         <Board
@@ -88,6 +143,8 @@ export function App() {
           onRemove={refocusAfter(remove)}
           onInteract={focusCapture}
           showEmoji={showEmoji}
+          fullscreen={fullscreen}
+          onFullscreen={(on) => (on ? enterFull() : exitFull())}
         />
       ) : (
         !needsLogin && (

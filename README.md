@@ -31,6 +31,7 @@ On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-ma
 - **Links:** ALL also draws dotted lines between entries in *different* categories that share a word (for example "mom" in shopping and people), labelled with that word. HUBS draws only the hub lines; OFF hides lines.
 - Search and filters fade non-matching cards instead of removing them, so the map keeps its shape. Ticked-off todos leave the board (see them under DONE).
 - **FIT** frames everything on screen. **TIDY** undoes all your dragging.
+- The **–** button minimizes the input panel to a small JUNK DRAWER tab (tap it to bring the panel back; what you were typing is kept). **FULL** shows the map full screen, using the browser's real full screen where it's allowed; **EXIT** or Esc leaves it.
 - Where you dragged things, the zoom, and the link mode are remembered per computer (in the browser), not synced between devices.
 
 ## Stack

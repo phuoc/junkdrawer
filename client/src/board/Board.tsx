@@ -18,11 +18,14 @@ const clampK = (k: number) => Math.min(2, Math.max(0.15, k));
 /** Zoom and pan so the whole map fits in the space the capture panel and toolbar leave free. */
 function fitView(layout: Layout, el: HTMLElement): View {
   const { width: W, height: H } = el.getBoundingClientRect();
-  const panel = document.querySelector(".panel")?.getBoundingClientRect();
+  // A hidden panel (full screen) measures 0×0 and leaves the whole board free.
+  const rect = document.querySelector(".panel")?.getBoundingClientRect();
+  const panel = rect && rect.width > 0 ? rect : undefined;
   const tools = document.querySelector(".board-tools")?.getBoundingClientRect();
   const bottom = tools ? H - tools.top + 12 : 80;
   // Beside the panel on a wide screen; below it on a phone, where it spans the top.
-  const below = !!panel && panel.width > W / 2;
+  // A minimized panel is a small tab at the top-left: keep the map below it.
+  const below = !!panel && (panel.width > W / 2 || panel.height < 80);
   const left = panel && !below ? panel.right + 24 : 12;
   const top = panel && below ? panel.bottom + 12 : 24;
   const area = { x: left, y: top, w: Math.max(120, W - left - 12), h: Math.max(120, H - top - bottom) };
@@ -61,9 +64,11 @@ interface Props {
   /** Called after any pointer interaction so the capture box can take focus back. */
   onInteract(): void;
   showEmoji: boolean;
+  fullscreen: boolean;
+  onFullscreen(on: boolean): void;
 }
 
-export function Board({ items, filter, query, onToggle, onRemove, onInteract, showEmoji }: Props) {
+export function Board({ items, filter, query, onToggle, onRemove, onInteract, showEmoji, fullscreen, onFullscreen }: Props) {
   // Offsets and view change on every pointer move, so they live in plain state
   // and are saved when a gesture ends.
   const [offsets, setOffsets] = useState<Offsets>(() => readStored(OFFSETS, {}));
@@ -362,6 +367,14 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
         </button>
         <button type="button" className={armTidy ? "arm" : undefined} onClick={tidy} title="undo all dragging">
           {armTidy ? "SURE?" : "TIDY"}
+        </button>
+        <button
+          type="button"
+          className={fullscreen ? "on" : undefined}
+          onClick={() => onFullscreen(!fullscreen)}
+          title={fullscreen ? "leave full screen (Esc)" : "show the map full screen"}
+        >
+          {fullscreen ? "EXIT" : "FULL"}
         </button>
       </div>
     </div>

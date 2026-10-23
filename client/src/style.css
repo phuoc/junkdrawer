@@ -369,7 +369,8 @@ main.board-mode { max-width: none; padding: 0; }
     padding: 10px 10px 2px;
     box-shadow: 5px 5px 0 var(--fg);
   }
-  .board-mode #add .label { display: none; }
+  .board-mode #add .label { font-size: 12px; padding: 3px 8px; margin-bottom: 4px; }
+  .panel-min { top: 6px; right: 6px; width: 28px; height: 26px; font-size: 16px; }
   .board-mode #text { font-size: 16px; min-height: 48px; padding: 10px; margin-bottom: 10px; }
   .board-mode #filters { gap: 6px; margin-bottom: 8px; }
   .board-mode #filters button { padding: 5px 7px; font-size: 11px; }
@@ -382,10 +383,47 @@ main.board-mode { max-width: none; padding: 0; }
     bottom: max(8px, env(safe-area-inset-bottom, 0px));
     flex-wrap: wrap;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     padding: 5px;
     box-shadow: 4px 4px 0 var(--fg);
   }
   .board-tools .gap, .board-tools span { display: none; }
-  .board-tools button { padding: 6px 8px; min-width: 34px; }
+  .board-tools button { padding: 7px 6px; min-width: 30px; font-size: 11px; }
 }
+
+/* ---- minimize / full screen (board only) ---- */
+.panel-min {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: var(--line);
+  background: var(--bg);
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1;
+}
+.panel-min:hover, .panel-min:focus-visible { background: var(--fg); color: var(--bg); }
+
+.board-mode .panel.minimized {
+  width: auto;
+  right: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.panel-open {
+  border: var(--line);
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  box-shadow: 5px 5px 0 var(--fg);
+  outline: 3px solid var(--bg);
+}
+.panel-open span { margin-left: 6px; }
