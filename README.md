@@ -16,6 +16,12 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 - To override the sorting, start with `t:` (force a todo) or `n:` (force a note).
 - Claude reuses your existing categories where it can, so the drawer stays tidy.
 - **Find** searches every entry. **Done** shows ticked-off todos.
+- **Countdowns:** an entry with the word "countdown" (or "count down") becomes a live timer card, counting days, hours, minutes and seconds. The date comes from, in order:
+  1. the entry itself: "countdown foko bday 30. july", "concert countdown 12 dec 20:00", "30/07/2027". Without a year, the next one coming is used, and birthdays and anniversaries roll over to the following year;
+  2. for F1 ("f1 race countdown"), the next race from the public Formula 1 calendar ([jolpica-f1](https://github.com/jolpica/jolpica-f1));
+  3. for anything else ("worlds final countdown"), Claude searching the web (needs `ANTHROPIC_API_KEY`).
+
+  The card says where the date came from. If none was found it asks you for one, and **change date** fixes a wrong one. In the claude.ai preview, which can't reach the F1 calendar or search the web, Claude answers from what it already knows and the card marks the date "not checked online".
 - **Colour-coded categories:** health is red, shopping blue, travel purple, home orange, work brown, ideas yellow, and errands and priorities green. Close synonyms Claude might use count too (groceries → shopping, fitness → health). Other categories stay black. Change the colours in `client/src/categoryColors.ts`.
 - **Emojis:** each entry gets an emoji for what it's about (milk → 🥛, dentist → 🦷), shown on the card's top-right corner. Claude picks it while sorting; with the rule-based sorter, and for entries saved before emojis existed, a built-in keyword list fills in. **EMOJI ON / OFF** turns them off on that device.
 - Works offline: entries are kept on the device and sent when you're back online.

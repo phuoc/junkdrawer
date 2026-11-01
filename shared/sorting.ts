@@ -3,6 +3,7 @@
 // entries the same way.
 import type { Sorting } from "./types.ts";
 import { emojiFor, isEmoji } from "./emoji.ts";
+import { isCountdown } from "./countdown.ts";
 
 // --- Rules -------------------------------------------------------------------
 // Used as the fallback when Claude isn't available or a call fails,
@@ -35,6 +36,7 @@ export function classifyByRules(text: string): Sorting {
   else kind = "todo";
 
   let category = "misc";
+  if (isCountdown(t)) return { kind: "note", category: "events", title: null, emoji: emojiFor(t) };
   if (/^(buy|order|get)\b/i.test(t) || (/^[\w\s,'-]{1,30}$/.test(t) && words <= 3 && !ACTION_START.test(t)))
     category = "shopping";
   else if (/^idea\b/i.test(t)) category = "ideas";

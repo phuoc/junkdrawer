@@ -92,7 +92,7 @@ export function computeLayout(items: Item[], offsets: Offsets): Layout {
 // meaningful word ("call mom" in people ↔ "birthday gift for mom" in shopping).
 
 const STOP = new Set(
-  "about above after again also among and any are back been before being below between both but can could did does doing down during each few for from further had has have having her here hers him his how into its just like more most much must need not now off once only other our out over own same she should some such than that the their them then there these they this those through too under until very was were what when where which while who whom why will with would you your yours idea note thing things todo make get buy call send pay book fix try ask take bring order check need want".split(
+  "about above after again also among and any are back been before being below between both but can could did does doing down during each few for from further had has have having her here hers him his how into its just like more most much must need not now off once only other our out over own same she should some such than that the their them then there these they this those through too under until very was were what when where which while who whom why will with would you your yours idea note thing things todo make get buy call send pay book fix try ask take bring order check need want countdown count down".split(
     " "
   )
 );

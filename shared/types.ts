@@ -1,3 +1,7 @@
+import type { Countdown } from "./countdown.ts";
+
+export type { Countdown };
+
 export type Kind = "todo" | "note" | "unsorted";
 
 export interface Item {
@@ -9,6 +13,8 @@ export interface Item {
   title: string | null;
   /** Picked while sorting; null for older entries (the client falls back to keywords). */
   emoji: string | null;
+  /** Set when the entry asks for a countdown ("f1 race countdown"). */
+  countdown: Countdown | null;
   done: boolean;
   /** Who sorted it; null while sorting is pending. */
   sorted_by: "ai" | "rules" | null;

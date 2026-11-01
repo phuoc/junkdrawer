@@ -11,10 +11,11 @@ interface Props {
   query: string;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  onSetCountdownDate(item: Item, date: string): void;
   showEmoji: boolean;
 }
 
-export function Drawer({ items, filter, query, onToggle, onRemove, showEmoji }: Props) {
+export function Drawer({ items, filter, query, onToggle, onRemove, onSetCountdownDate, showEmoji }: Props) {
   const shown = items.filter((x) => matches(x, filter, query));
 
   if (!shown.length) {
@@ -51,7 +52,7 @@ export function Drawer({ items, filter, query, onToggle, onRemove, showEmoji }: 
               <small>{list.length}</small>
             </h2>
             {list.map((x) => (
-              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
+              <ItemRow key={x.id} item={x} onToggle={onToggle} onRemove={onRemove} onSetCountdownDate={onSetCountdownDate} showEmoji={showEmoji} />
             ))}
           </section>
         );

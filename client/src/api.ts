@@ -20,6 +20,7 @@ const httpApi = {
   list: () => call<ItemsResponse>("GET", "/api/items"),
   add: (entry: { id: string; text: string }) => call<{ item: Item }>("POST", "/api/items", entry),
   setDone: (id: string, done: boolean) => call<{ item: Item }>("PATCH", `/api/items/${id}`, { done }),
+  setCountdownDate: (id: string, date: string) => call<{ item: Item }>("PATCH", `/api/items/${id}`, { countdownDate: date }),
   remove: (id: string) => call<{ ok: true }>("DELETE", `/api/items/${id}`),
   login: (passcode: string) => call<{ ok: true }>("POST", "/api/login", { passcode }),
 };

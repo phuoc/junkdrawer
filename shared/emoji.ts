@@ -56,9 +56,13 @@ const RULES: [RegExp, string][] = [
   [/\b(lisbon|paris|london|tokyo|trip|travel|holiday|vacation)\b/i, "🧳"],
   [/\b(car|tyres?|tires?|garage|mot|oil change)\b/i, "🚗"],
   [/\b(bike|bicycle|cycling)\b/i, "🚲"],
+  // sport & events
+  [/\b(f1|formula\s?(1|one)|grand\s?prix|race)\b/i, "🏎️"],
+  [/\b(worlds|league of legends|lol|esports?|tournament|final|finals)\b/i, "🏆"],
   // people
   [/\b(mom|mum|mother|dad|father|parents|family)\b/i, "👪"],
   [/\b(baby|kids?|children)\b/i, "🧒"],
+  [/\b(b-?day|birthday|bursdag)\b/i, "🎂"], // after the gift rule, so "birthday gift" stays 🎁
   [/\b(call|phone|ring)\b/i, "📞"],
   [/\b(email|e-mail|mail|reply)\b/i, "📧"],
   [/\b(text|message|whatsapp)\b/i, "💬"],

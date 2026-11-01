@@ -4,6 +4,7 @@
 // on the viewer's own Claude account. Same shape as the HTTP api in api.ts.
 import type { Item, ItemsResponse, Sorting } from "../../shared/types.ts";
 import { classifyByRules, cleanSorting, forcedKind, SORTING_INSTRUCTIONS, sortingRequest } from "../../shared/sorting.ts";
+import { cleanFoundDate, countdownFromText, isCountdown, type Countdown } from "../../shared/countdown.ts";
 
 /** Thrown when the page can't reach the viewer's store (signed out, not allowed). */
 export class StoreUnavailable extends Error {}
@@ -74,6 +75,7 @@ const toItem = (d: DocSnap): Item => {
     category: x.category ?? "unsorted",
     title: x.title ?? null,
     emoji: x.emoji ?? null,
+    countdown: (x.countdown as Countdown | undefined) ?? null,
     done: !!x.done,
     sorted_by: x.sorted_by ?? null,
     created_at: Number(x.created_at ?? 0),
@@ -110,8 +112,48 @@ async function sortItem(e: Env, item: Item, forced: "todo" | "note" | undefined)
     }
   }
   if (forced) result.kind = forced;
+  if (item.countdown) result.kind = "note"; // a timer, nothing to tick off
   try {
     await e.items.doc(item.id).update({ ...result, sorted_by: sortedBy, updated_at: Date.now() });
+  } catch {
+    /* deleted meanwhile */
+  }
+}
+
+// The page can't reach schedules or search the web, so Claude answers from what
+// it knows, and the card says so. A wrong date can be changed on the card.
+const COUNTDOWN_PROMPT = (text: string, label: string, today: string) =>
+  `Today is ${today}. In a personal notes app the user wrote:\n<entry>\n${text}\n</entry>\n\n` +
+  `They want a countdown to the NEXT upcoming "${label}". From what you know, when does it start? ` +
+  `Only answer if you know the scheduled date; if you are unsure or it may have changed, say not found.\n\n` +
+  `Reply with only a JSON object: {"found": true, "label": "<short event name>", "start": "<YYYY-MM-DD, or YYYY-MM-DDTHH:MM with a UTC offset or Z>"} or {"found": false}.`;
+
+async function findCountdownDate(e: Env, item: Item, cd: Countdown) {
+  let next: Countdown = { ...cd, status: "not-found" };
+  if (e.sample && !claudeOff) {
+    try {
+      const now = new Date();
+      const reply = await e.sample.json<{ found?: boolean; label?: unknown; start?: unknown }>(
+        COUNTDOWN_PROMPT(item.text, cd.label, now.toISOString().slice(0, 10)),
+        { modelTier: "default" }
+      );
+      const when = reply?.found ? cleanFoundDate(reply.start, now) : null;
+      if (when)
+        next = {
+          ...cd,
+          ...when,
+          status: "found",
+          label: typeof reply.label === "string" && reply.label.trim() ? reply.label.trim().slice(0, 80) : cd.label,
+          source: "Claude's knowledge (not checked online)",
+        };
+    } catch (err) {
+      const code = (err as { code?: string }).code ?? "";
+      if (OFF_CODES.has(code)) claudeOff = true;
+      console.warn("[countdown] no date:", code || err);
+    }
+  }
+  try {
+    await e.items.doc(item.id).update({ countdown: next, updated_at: Date.now() });
   } catch {
     /* deleted meanwhile */
   }
@@ -141,6 +183,7 @@ export const artifactApi = {
       category: "unsorted",
       title: null,
       emoji: null,
+      countdown: isCountdown(text) ? countdownFromText(text, new Date(now)) : null,
       done: false,
       sorted_by: null,
       created_at: now,
@@ -149,6 +192,7 @@ export const artifactApi = {
     const { id: _id, ...body } = item;
     await ref.set(body);
     void sortItem(e, item, forced?.kind);
+    if (item.countdown?.status === "looking") void findCountdownDate(e, item, item.countdown);
     return { item };
   },
 
@@ -157,6 +201,16 @@ export const artifactApi = {
     const ref = e.items.doc(id);
     await ref.update({ done, updated_at: Date.now() });
     return { item: toItem(await ref.get()) };
+  },
+
+  async setCountdownDate(id: string, date: string): Promise<{ item: Item }> {
+    const e = await store();
+    const ref = e.items.doc(id);
+    const current = toItem(await ref.get());
+    if (!current.countdown) throw new Error("not a countdown");
+    const countdown: Countdown = { ...current.countdown, status: "found", at: null, date, time: null, source: "you", url: null };
+    await ref.update({ countdown, updated_at: Date.now() });
+    return { item: { ...current, countdown } };
   },
 
   async remove(id: string): Promise<{ ok: true }> {

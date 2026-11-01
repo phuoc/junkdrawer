@@ -61,6 +61,7 @@ interface Props {
   query: string;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  onSetCountdownDate(item: Item, date: string): void;
   /** Called after any pointer interaction so the capture box can take focus back. */
   onInteract(): void;
   showEmoji: boolean;
@@ -68,7 +69,7 @@ interface Props {
   onFullscreen(on: boolean): void;
 }
 
-export function Board({ items, filter, query, onToggle, onRemove, onInteract, showEmoji, fullscreen, onFullscreen }: Props) {
+export function Board({ items, filter, query, onToggle, onRemove, onSetCountdownDate, onInteract, showEmoji, fullscreen, onFullscreen }: Props) {
   // Offsets and view change on every pointer move, so they live in plain state
   // and are saved when a gesture ends.
   const [offsets, setOffsets] = useState<Offsets>(() => readStored(OFFSETS, {}));
@@ -225,7 +226,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
 
   const startNode = (key: string) => (e: ReactPointerEvent) => {
     if (pointers.current.size > 1) return;
-    if (e.button !== 0 || (e.target as HTMLElement).closest("button")) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest("button, input, a, label")) return;
     e.stopPropagation();
     drag.current = { kind: "node", key, sx: e.clientX, sy: e.clientY, origin: offsets[key] ?? { x: 0, y: 0 }, moved: false };
   };
@@ -339,11 +340,11 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
         {cards.map((c) => (
           <div
             key={c.item.id}
-            className={`card${dragging === c.item.id ? " dragging" : ""}${matches(c.item, filter, query) ? "" : " dim"}`}
+            className={`card${c.item.countdown ? " countdown-card" : ""}${dragging === c.item.id ? " dragging" : ""}${matches(c.item, filter, query) ? "" : " dim"}`}
             style={{ ...at(c, c.tilt), ...(c.item.sorted_by ? categoryStyle(c.item.category) : {}) }}
             onPointerDown={startNode(c.item.id)}
           >
-            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
+            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} onSetCountdownDate={onSetCountdownDate} showEmoji={showEmoji} />
           </div>
         ))}
       </div>

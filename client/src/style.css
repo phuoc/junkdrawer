@@ -427,3 +427,47 @@ main.board-mode { max-width: none; padding: 0; }
   outline: 3px solid var(--bg);
 }
 .panel-open span { margin-left: 6px; }
+
+/* ---- countdown cards ---- */
+.countdown { display: grid; gap: 6px; }
+.countdown .cd-label { text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; margin: 0; }
+.countdown p { margin: 0; }
+.cd-state { font-size: 13px; opacity: 0.7; animation: cd-blink 1.2s steps(2) infinite; }
+@keyframes cd-blink { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .cd-state { animation: none; } }
+
+.cd-clock { display: flex; gap: 4px; font-variant-numeric: tabular-nums; }
+.cd-clock span {
+  display: grid;
+  justify-items: center;
+  min-width: 44px;
+  padding: 4px 5px 2px;
+  white-space: nowrap;
+  background: var(--fg);
+  color: var(--bg);
+}
+.cd-clock b { font-size: 22px; line-height: 1.05; }
+.cd-clock small { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
+.cd-big { font-size: 24px; font-weight: 900; letter-spacing: 0.06em; }
+.cd-big.past { opacity: 0.5; }
+.cd-when { font-size: 12px; font-weight: 700; }
+.cd-source { font-size: 11px; opacity: 0.75; }
+.cd-source a { color: inherit; }
+.cd-edit { border: 0; background: none; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; }
+.cd-date { display: grid; gap: 4px; font-size: 12px; }
+.cd-date span { display: flex; gap: 6px; }
+.cd-date input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--fg);
+  border-radius: 0;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 16px; /* no zoom-in on iPhone */
+  background: var(--bg);
+}
+.cd-date button { border: 2px solid var(--fg); background: var(--fg); color: var(--bg); font-weight: 800; padding: 4px 10px; border-radius: 0; }
+.item.countdown-item .body { padding-top: 0; }
+.board .card.countdown-card { width: 260px; }
+.card .cd-clock span { min-width: 40px; }
+.card .cd-clock b { font-size: 19px; }

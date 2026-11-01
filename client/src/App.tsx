@@ -12,7 +12,7 @@ import { Board } from "./board/Board.tsx";
 export type Layout = "board" | "list";
 
 export function App() {
-  const { items, needsLogin, status, add, toggle, remove, login } = useDrawer();
+  const { items, needsLogin, status, add, toggle, setCountdownDate, remove, login } = useDrawer();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   // Computers open on the board, phones and tablets on the list; the
@@ -141,6 +141,7 @@ export function App() {
           query={query}
           onToggle={refocusAfter(toggle)}
           onRemove={refocusAfter(remove)}
+          onSetCountdownDate={refocusAfter(setCountdownDate)}
           onInteract={focusCapture}
           showEmoji={showEmoji}
           fullscreen={fullscreen}
@@ -148,7 +149,7 @@ export function App() {
         />
       ) : (
         !needsLogin && (
-          <Drawer items={items} filter={filter} query={query} onToggle={refocusAfter(toggle)} onRemove={refocusAfter(remove)} showEmoji={showEmoji} />
+          <Drawer items={items} filter={filter} query={query} onToggle={refocusAfter(toggle)} onRemove={refocusAfter(remove)} onSetCountdownDate={refocusAfter(setCountdownDate)} showEmoji={showEmoji} />
         )
       )}
     </main>
