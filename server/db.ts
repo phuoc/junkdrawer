@@ -2,9 +2,9 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
-import type { Item, Sorting } from "../shared/types.ts";
+import type { Countdown, Item, Sorting } from "../shared/types.ts";
 
-type Row = Omit<Item, "done"> & { done: number };
+type Row = Omit<Item, "done" | "countdown"> & { done: number; countdown: string | null };
 
 export type Db = ReturnType<typeof openDb>;
 
@@ -20,6 +20,7 @@ export function openDb(file: string) {
       category   TEXT NOT NULL DEFAULT 'unsorted',
       title      TEXT,                              -- short label for long notes
       emoji      TEXT,                              -- one emoji for the entry, picked while sorting
+      countdown  TEXT,                              -- JSON Countdown when the entry asks for one
       done       INTEGER NOT NULL DEFAULT 0,
       sorted_by  TEXT,                              -- ai | rules | null while pending
       created_at INTEGER NOT NULL,
@@ -30,6 +31,7 @@ export function openDb(file: string) {
   // migrations for databases created by earlier versions
   const columns = (db.prepare(`PRAGMA table_info(items)`).all() as { name: string }[]).map((c) => c.name);
   if (!columns.includes("emoji")) db.exec(`ALTER TABLE items ADD COLUMN emoji TEXT`);
+  if (!columns.includes("countdown")) db.exec(`ALTER TABLE items ADD COLUMN countdown TEXT`);
 
   const q = {
     insert: db.prepare(`INSERT INTO items (id, text, created_at, updated_at) VALUES (?, ?, ?, ?)`),
@@ -44,13 +46,20 @@ export function openDb(file: string) {
        WHERE id = ?`
     ),
     done: db.prepare(`UPDATE items SET done = ?, updated_at = ? WHERE id = ?`),
+    countdown: db.prepare(`UPDATE items SET countdown = ?, updated_at = ? WHERE id = ?`),
     del: db.prepare(`DELETE FROM items WHERE id = ?`),
   };
 
   const toItem = (r: unknown): Item | undefined => {
     if (!r) return undefined;
     const row = r as Row;
-    return { ...row, done: !!row.done };
+    let countdown: Countdown | null = null;
+    try {
+      countdown = row.countdown ? (JSON.parse(row.countdown) as Countdown) : null;
+    } catch {
+      /* unreadable: treat as none */
+    }
+    return { ...row, done: !!row.done, countdown };
   };
   const get = (id: string) => toItem(q.get.get(id));
 
@@ -71,6 +80,10 @@ export function openDb(file: string) {
     },
     setDone(id: string, done: boolean) {
       q.done.run(done ? 1 : 0, Date.now(), id);
+      return get(id);
+    },
+    setCountdown(id: string, countdown: Countdown | null) {
+      q.countdown.run(countdown ? JSON.stringify(countdown) : null, Date.now(), id);
       return get(id);
     },
     remove: (id: string) => Number(q.del.run(id).changes) > 0,

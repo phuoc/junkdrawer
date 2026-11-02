@@ -5,6 +5,8 @@ import { join, extname, normalize, sep } from "node:path";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Db } from "./db.ts";
 import type { Classifier } from "./classify.ts";
+import type { CountdownResolver } from "./countdown.ts";
+import { countdownFromText, isCountdown, type Countdown } from "../shared/countdown.ts";
 import { forcedKind } from "./classify.ts";
 import type { Item } from "../shared/types.ts";
 
@@ -30,11 +32,14 @@ class HttpError extends Error {
 export function createApp({
   db,
   classifier,
+  countdowns,
   passcode,
   staticDir,
 }: {
   db: Db;
   classifier: Classifier;
+  /** Finds dates for countdown entries; without it they ask the user for one. */
+  countdowns?: CountdownResolver;
   passcode: string;
   staticDir?: string;
 }) {
@@ -50,6 +55,7 @@ export function createApp({
   async function sortItem(item: Item, forced?: "todo" | "note") {
     const result = await classifier.classify(item.text, db.categories());
     if (forced) result.kind = forced;
+    if (item.countdown) result.kind = "note"; // a timer, nothing to tick off
     if (db.get(item.id)) db.setSort(item.id, result, result.sortedBy);
   }
 
@@ -78,14 +84,33 @@ export function createApp({
       const forced = forcedKind(text);
       if (forced && forced.rest.trim()) text = forced.rest.trim();
       const id = typeof body.id === "string" && /^[\w-]{8,64}$/.test(body.id) ? body.id : undefined;
-      const item = db.add(text, id);
+      let item = db.add(text, id);
+      if (!item.sorted_by && !item.countdown && isCountdown(text)) {
+        // Show the timer card straight away; dates that aren't in the entry are looked up meanwhile.
+        const now = new Date();
+        const first = countdownFromText(text, now);
+        item = db.setCountdown(item.id, countdowns || first.status === "found" ? first : { ...first, status: "not-found" })!;
+        if (first.status === "looking" && countdowns)
+          countdowns(text, now)
+            .then((cd) => db.get(item.id) && db.setCountdown(item.id, cd))
+            .catch((e) => console.error(e));
+      }
       if (!item.sorted_by) sortItem(item, forced?.kind).catch((e) => console.error(e));
       return send(res, 201, { item });
     }
     const m = /^\/api\/items\/([\w-]+)$/.exec(path);
     if (m && req.method === "PATCH") {
-      const body = (await readJson(req)) as { done?: unknown };
-      if (!db.get(m[1])) return send(res, 404, { error: "not found" });
+      const body = (await readJson(req)) as { done?: unknown; countdownDate?: unknown };
+      const item = db.get(m[1]);
+      if (!item) return send(res, 404, { error: "not found" });
+      if ("countdownDate" in body) {
+        // the user setting or changing a countdown's date
+        const date = body.countdownDate;
+        if (!item.countdown || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+          return send(res, 400, { error: "expected countdownDate as YYYY-MM-DD on a countdown" });
+        const cd: Countdown = { ...item.countdown, status: "found", at: null, date, time: null, source: "you", url: null };
+        return send(res, 200, { item: db.setCountdown(item.id, cd) });
+      }
       return send(res, 200, { item: db.setDone(m[1], !!body.done) });
     }
     if (m && req.method === "DELETE") {

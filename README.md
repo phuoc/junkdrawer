@@ -16,6 +16,12 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 - To override the sorting, start with `t:` (force a todo) or `n:` (force a note).
 - Claude reuses your existing categories where it can, so the drawer stays tidy.
 - **Find** searches every entry. **Done** shows ticked-off todos.
+- **Countdowns:** an entry with the word "countdown" (or "count down") becomes a live timer card, counting days, hours, minutes and seconds. The date comes from, in order:
+  1. the entry itself: "countdown foko bday 30. july", "concert countdown 12 dec 20:00", "30/07/2027". Without a year, the next one coming is used, and birthdays and anniversaries roll over to the following year;
+  2. for F1 ("f1 race countdown"), the next race from the public Formula 1 calendar ([jolpica-f1](https://github.com/jolpica/jolpica-f1));
+  3. for anything else ("worlds final countdown"), Claude searching the web (needs `ANTHROPIC_API_KEY`).
+
+  The card says where the date came from. If none was found it asks you for one, and **change date** fixes a wrong one. In the claude.ai preview, which can't reach the F1 calendar or search the web, Claude answers from what it already knows and the card marks the date "not checked online".
 - **Colour-coded categories:** health is red, shopping blue, travel purple, home orange, work brown, ideas yellow, and errands and priorities green. Close synonyms Claude might use count too (groceries → shopping, fitness → health). Other categories stay black. Change the colours in `client/src/categoryColors.ts`.
 - **Emojis:** each entry gets an emoji for what it's about (milk → 🥛, dentist → 🦷), shown on the card's top-right corner. Claude picks it while sorting; with the rule-based sorter, and for entries saved before emojis existed, a built-in keyword list fills in. **EMOJI ON / OFF** turns them off on that device.
 - Works offline: entries are kept on the device and sent when you're back online.
@@ -23,14 +29,15 @@ A place to throw notes and todos without thinking about where they go. Open it, 
 
 ## Desktop board
 
-On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-map board instead of a list. **LIST / BOARD** switches between them; phones and tablets always get the list.
+On a computer (wide screen and a mouse), the drawer opens as a cluttered mind-map board instead of a list; phones and tablets open on the list. **LIST / BOARD** switches between them on any device, and each device remembers its choice.
 
 - **JUNK DRAWER** sits in the middle, with one black hub per category around it and each entry's card hanging off its hub.
 - A new entry hangs off the centre on a dashed line while it's being sorted, then glides to its hub.
-- Drag a card to move it; drag a hub to move its whole cluster. Drag the background (or scroll) to pan; pinch or ctrl+scroll to zoom.
+- Drag a card to move it; drag a hub to move its whole cluster. Drag the background (or scroll) to pan; pinch or ctrl+scroll to zoom. On a phone: one finger pans or drags, two fingers pinch to zoom, and the panel and toolbar sit at the top and bottom of the screen.
 - **Links:** ALL also draws dotted lines between entries in *different* categories that share a word (for example "mom" in shopping and people), labelled with that word. HUBS draws only the hub lines; OFF hides lines.
 - Search and filters fade non-matching cards instead of removing them, so the map keeps its shape. Ticked-off todos leave the board (see them under DONE).
 - **FIT** frames everything on screen. **TIDY** undoes all your dragging.
+- The **–** button minimizes the input panel to a small JUNK DRAWER tab (tap it to bring the panel back; what you were typing is kept). **FULL** shows the map full screen, using the browser's real full screen where it's allowed; **EXIT** or Esc leaves it.
 - Where you dragged things, the zoom, and the link mode are remembered per computer (in the browser), not synced between devices.
 
 ## Stack
@@ -62,6 +69,10 @@ npm start               # serve dist/ and the API on :3000
 | `PORT` | default `3000` |
 
 `npm run dev` reads env vars from your shell, not `.env`. Use `export $(cat .env | xargs)` or set them inline.
+
+## claude.ai preview
+
+`npm run build:artifact` builds a single-page version of the app (`dist-artifact/junk-drawer.html`) that runs as a page on claude.ai, for trying it on your phone without hosting anything. It has no server: each person's entries are saved privately in the page's storage, and Claude sorts them through the page using that person's own Claude account. Entries there are separate from your self-hosted drawer, and offline saving and home-screen install aren't available on claude.ai.
 
 ## Self-hosting on Proxmox
 

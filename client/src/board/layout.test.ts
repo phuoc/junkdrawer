@@ -11,6 +11,7 @@ const item = (text: string, category: string, extra: Partial<Item> = {}): Item =
   category,
   title: null,
   emoji: null,
+  countdown: null,
   done: false,
   sorted_by: "ai",
   created_at: t++,

@@ -1,4 +1,5 @@
 import type { Item, ItemsResponse } from "../../shared/types.ts";
+import { artifactApi } from "./artifactApi.ts";
 
 /** Thrown when the server wants a passcode. */
 export class LoginRequired extends Error {}
@@ -15,10 +16,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   return res.json() as Promise<T>;
 }
 
-export const api = {
+const httpApi = {
   list: () => call<ItemsResponse>("GET", "/api/items"),
   add: (entry: { id: string; text: string }) => call<{ item: Item }>("POST", "/api/items", entry),
   setDone: (id: string, done: boolean) => call<{ item: Item }>("PATCH", `/api/items/${id}`, { done }),
+  setCountdownDate: (id: string, date: string) => call<{ item: Item }>("PATCH", `/api/items/${id}`, { countdownDate: date }),
   remove: (id: string) => call<{ ok: true }>("DELETE", `/api/items/${id}`),
   login: (passcode: string) => call<{ ok: true }>("POST", "/api/login", { passcode }),
 };
+
+/** The claude.ai preview build has no server: it saves and sorts through the page instead. */
+export const api: typeof httpApi = import.meta.env.MODE === "artifact" ? artifactApi : httpApi;

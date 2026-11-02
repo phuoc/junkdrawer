@@ -13,14 +13,23 @@ interface View extends Point {
 
 const OFFSETS = "jd-board-offsets";
 const VIEW = "jd-board-view";
-const clampK = (k: number) => Math.min(2, Math.max(0.25, k));
+const clampK = (k: number) => Math.min(2, Math.max(0.15, k));
 
-/** Zoom and pan so the whole map fits in the space right of the capture panel. */
+/** Zoom and pan so the whole map fits in the space the capture panel and toolbar leave free. */
 function fitView(layout: Layout, el: HTMLElement): View {
   const { width: W, height: H } = el.getBoundingClientRect();
-  const panel = document.querySelector(".panel")?.getBoundingClientRect();
-  const left = panel ? panel.right + 24 : 24;
-  const area = { x: left, y: 24, w: Math.max(200, W - left - 24), h: H - 24 - 80 }; // 80: toolbar
+  // A hidden panel (full screen) measures 0×0 and leaves the whole board free.
+  const rect = document.querySelector(".panel")?.getBoundingClientRect();
+  const panel = rect && rect.width > 0 ? rect : undefined;
+  const tools = document.querySelector(".board-tools")?.getBoundingClientRect();
+  const bottom = tools ? H - tools.top + 12 : 80;
+  // Beside the panel on a wide screen; below it on a phone, where it spans the top.
+  // A minimized panel is a small tab at the top-left: keep the map below it.
+  const minimized = !!document.querySelector(".panel.minimized");
+  const below = !!panel && (panel.width > W / 2 || minimized);
+  const left = panel && !below ? panel.right + 24 : 12;
+  const top = panel && below ? panel.bottom + 12 : 24;
+  const area = { x: left, y: top, w: Math.max(120, W - left - 12), h: Math.max(120, H - top - bottom) };
   const b = bounds(layout);
   const k = clampK(Math.min(area.w / (b.maxX - b.minX), area.h / (b.maxY - b.minY), 1.1));
   const cx = (b.minX + b.maxX) / 2;
@@ -37,18 +46,33 @@ interface Drag {
   moved: boolean;
 }
 
+/** Two fingers on the board: zoom around their midpoint and pan with it. */
+interface Pinch {
+  dist: number;
+  mid: Point;
+  view: View;
+}
+
+const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+const midpoint = (a: Point, b: Point) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
 interface Props {
   items: Item[];
   filter: Filter;
   query: string;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  onSetCountdownDate(item: Item, date: string): void;
   /** Called after any pointer interaction so the capture box can take focus back. */
   onInteract(): void;
   showEmoji: boolean;
+  fullscreen: boolean;
+  /** The input panel is folded down to its tab. */
+  panelMinimized: boolean;
+  onFullscreen(on: boolean): void;
 }
 
-export function Board({ items, filter, query, onToggle, onRemove, onInteract, showEmoji }: Props) {
+export function Board({ items, filter, query, onToggle, onRemove, onSetCountdownDate, onInteract, showEmoji, fullscreen, panelMinimized, onFullscreen }: Props) {
   // Offsets and view change on every pointer move, so they live in plain state
   // and are saved when a gesture ends.
   const [offsets, setOffsets] = useState<Offsets>(() => readStored(OFFSETS, {}));
@@ -58,18 +82,37 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
   const [armTidy, setArmTidy] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  const pointers = useRef(new Map<number, Point>());
+  const pinch = useRef<Pinch | null>(null);
   const suppressClick = useRef(false);
   const latest = useRef({ offsets, view });
   latest.current = { offsets, view };
 
   const layout = useMemo(() => computeLayout(items, offsets), [items, offsets]);
 
+  // The view FIT last produced; still current means the user hasn't moved the map since.
+  const fittedView = useRef<View | null>(null);
   const fit = () => {
     if (!boardRef.current) return;
     const next = fitView(layout, boardRef.current);
+    fittedView.current = next;
     setView(next);
     writeStored(VIEW, next);
   };
+  // When the free space changes (panel minimized or restored, full screen on or
+  // off), re-frame a map that is still as FIT left it, once the panel has moved.
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  const firstFrame = useRef(true);
+  useEffect(() => {
+    if (firstFrame.current) {
+      firstFrame.current = false;
+      return;
+    }
+    if (!fittedView.current || latest.current.view !== fittedView.current) return;
+    const raf = requestAnimationFrame(() => fitRef.current());
+    return () => cancelAnimationFrame(raf);
+  }, [fullscreen, panelMinimized]);
   // First visit on this device: frame the whole map once the items arrive.
   const fitted = useRef(view !== null);
   useEffect(() => {
@@ -95,6 +138,21 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
   // --- gestures ---
   useEffect(() => {
     const move = (e: PointerEvent) => {
+      if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const p = pinch.current;
+      const el = boardRef.current;
+      if (p && el && pointers.current.size >= 2) {
+        const [a, b] = [...pointers.current.values()];
+        const rect = el.getBoundingClientRect();
+        const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const k = clampK(p.view.k * (distance(a, b) / p.dist));
+        // keep the world point that was under the fingers' midpoint under it
+        const wx = (p.mid.x - center.x - p.view.x) / p.view.k;
+        const wy = (p.mid.y - center.y - p.view.y) / p.view.k;
+        const m = midpoint(a, b);
+        setView({ k, x: m.x - center.x - wx * k, y: m.y - center.y - wy * k });
+        return;
+      }
       const d = drag.current;
       if (!d) return;
       const dx = e.clientX - d.sx;
@@ -109,7 +167,17 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
         setOffsets((o) => ({ ...o, [d.key]: { x: d.origin.x + dx / k, y: d.origin.y + dy / k } }));
       }
     };
-    const up = () => {
+    const up = (e: PointerEvent) => {
+      pointers.current.delete(e.pointerId);
+      if (pinch.current) {
+        if (pointers.current.size < 2) {
+          pinch.current = null;
+          suppressClick.current = true;
+          writeStored(VIEW, latest.current.view);
+          if (!pointers.current.size) onInteract();
+        }
+        return;
+      }
       const d = drag.current;
       if (!d) return;
       drag.current = null;
@@ -154,12 +222,36 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
     return () => el.removeEventListener("wheel", wheel);
   }, []);
 
+  // Runs before any card or hub sees the press, so a second finger turns
+  // whatever the first one started into a pinch.
+  const trackPointer = (e: ReactPointerEvent) => {
+    // A click always follows its own press, so a leftover "ignore the next
+    // click" from a touch drag or pinch (which end without a click) is stale.
+    suppressClick.current = false;
+    if (e.pointerType === "mouse") return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const d = drag.current;
+      if (d?.moved) {
+        // put back whatever the first finger had started moving
+        if (d.kind === "node") setOffsets((o) => ({ ...o, [d.key]: d.origin }));
+        else setView((cur) => ({ k: cur?.k ?? 0.8, x: d.origin.x, y: d.origin.y }));
+      }
+      drag.current = null;
+      setDragging(null);
+      pinch.current = { dist: Math.max(1, distance(a, b)), mid: midpoint(a, b), view: latest.current.view ?? { x: 0, y: 0, k: 0.8 } };
+    }
+  };
+
   const startNode = (key: string) => (e: ReactPointerEvent) => {
-    if (e.button !== 0 || (e.target as HTMLElement).closest("button")) return;
+    if (pointers.current.size > 1) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest("button, input, a, label")) return;
     e.stopPropagation();
     drag.current = { kind: "node", key, sx: e.clientX, sy: e.clientY, origin: offsets[key] ?? { x: 0, y: 0 }, moved: false };
   };
   const startPan = (e: ReactPointerEvent) => {
+    if (pointers.current.size > 1) return;
     if (e.button !== 0) return;
     drag.current = { kind: "pan", key: "", sx: e.clientX, sy: e.clientY, origin: { x: v.x, y: v.y }, moved: false };
   };
@@ -190,6 +282,7 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
     <div
       className="board"
       ref={boardRef}
+      onPointerDownCapture={trackPointer}
       onPointerDown={startPan}
       onClickCapture={(e) => {
         if (suppressClick.current) {
@@ -267,11 +360,11 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
         {cards.map((c) => (
           <div
             key={c.item.id}
-            className={`card${dragging === c.item.id ? " dragging" : ""}${matches(c.item, filter, query) ? "" : " dim"}`}
+            className={`card${c.item.countdown ? " countdown-card" : ""}${dragging === c.item.id ? " dragging" : ""}${matches(c.item, filter, query) ? "" : " dim"}`}
             style={{ ...at(c, c.tilt), ...(c.item.sorted_by ? categoryStyle(c.item.category) : {}) }}
             onPointerDown={startNode(c.item.id)}
           >
-            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} showEmoji={showEmoji} />
+            <ItemRow item={c.item} onToggle={onToggle} onRemove={onRemove} onSetCountdownDate={onSetCountdownDate} showEmoji={showEmoji} />
           </div>
         ))}
       </div>
@@ -295,6 +388,14 @@ export function Board({ items, filter, query, onToggle, onRemove, onInteract, sh
         </button>
         <button type="button" className={armTidy ? "arm" : undefined} onClick={tidy} title="undo all dragging">
           {armTidy ? "SURE?" : "TIDY"}
+        </button>
+        <button
+          type="button"
+          className={fullscreen ? "on" : undefined}
+          onClick={() => onFullscreen(!fullscreen)}
+          title={fullscreen ? "leave full screen (Esc)" : "show the map full screen"}
+        >
+          {fullscreen ? "EXIT" : "FULL"}
         </button>
       </div>
     </div>

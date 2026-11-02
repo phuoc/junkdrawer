@@ -18,8 +18,7 @@ interface Props {
   onQuery(q: string): void;
   onClearQuery(): void;
   findRef: Ref<HTMLInputElement>;
-  /** Only passed on desktop, where the board is available. */
-  layout?: Layout;
+  layout: Layout;
   onLayout(l: Layout): void;
   showEmoji: boolean;
   onShowEmoji(on: boolean): void;
@@ -52,11 +51,9 @@ export function Filters({ filter, onFilter, query, onQuery, onClearQuery, findRe
       >
         EMOJI {showEmoji ? "ON" : "OFF"}
       </button>
-      {layout && (
-        <button type="button" className="layout-toggle" onClick={() => onLayout(layout === "board" ? "list" : "board")}>
-          {layout === "board" ? "LIST" : "BOARD"}
-        </button>
-      )}
+      <button type="button" className="layout-toggle" onClick={() => onLayout(layout === "board" ? "list" : "board")}>
+        {layout === "board" ? "LIST" : "BOARD"}
+      </button>
     </nav>
   );
 }

@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import type { Item } from "../../../shared/types.ts";
 import { emojiFor } from "../../../shared/emoji.ts";
+import { CountdownView } from "./CountdownView.tsx";
 
 interface Props {
   item: Item;
   onToggle(item: Item): void;
   onRemove(item: Item): void;
+  onSetCountdownDate(item: Item, date: string): void;
   showEmoji: boolean;
 }
 
-export function ItemRow({ item, onToggle, onRemove, showEmoji }: Props) {
+export function ItemRow({ item, onToggle, onRemove, onSetCountdownDate, showEmoji }: Props) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
 
@@ -21,22 +23,36 @@ export function ItemRow({ item, onToggle, onRemove, showEmoji }: Props) {
   }, [armed]);
 
   // older entries have no stored emoji; guess one from the text
-  const emoji = showEmoji && item.sorted_by ? (item.emoji ?? emojiFor(item.text)) : null;
-  const cls = ["item", item.kind, item.done && "done", !item.sorted_by && "pending", open && "open"].filter(Boolean).join(" ");
+  const emoji = showEmoji && item.sorted_by ? (item.emoji ?? emojiFor(item.text) ?? (item.countdown ? "⏳" : null)) : null;
+  const cd = item.countdown;
+  const cls = ["item", cd ? "countdown-item" : item.kind, item.done && "done", !item.sorted_by && "pending", open && "open"]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <article className={cls}>
-      {item.kind === "todo" && (
+      {cd && (
+        <span className="tag" aria-hidden="true">
+          ⏱
+        </span>
+      )}
+      {!cd && item.kind === "todo" && (
         <button type="button" className="box" aria-label={item.done ? "mark not done" : "mark done"} onClick={() => onToggle(item)}>
           {item.done ? "✕" : ""}
         </button>
       )}
-      {item.kind === "note" && <span className="tag">N</span>}
+      {!cd && item.kind === "note" && <span className="tag">N</span>}
 
-      <div className="body" onClick={item.kind === "note" ? () => setOpen((o) => !o) : undefined}>
-        {item.title && <strong>{item.title}</strong>}
-        <p>{item.text}</p>
-      </div>
+      {cd ? (
+        <div className="body">
+          <CountdownView cd={cd} onSetDate={(date) => onSetCountdownDate(item, date)} />
+        </div>
+      ) : (
+        <div className="body" onClick={item.kind === "note" ? () => setOpen((o) => !o) : undefined}>
+          {item.title && <strong>{item.title}</strong>}
+          <p>{item.text}</p>
+        </div>
+      )}
 
       {emoji && (
         <span className="emoji" aria-hidden="true">

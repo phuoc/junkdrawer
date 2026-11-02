@@ -13,7 +13,8 @@
     "build": "npm run typecheck && vite build",
     "typecheck": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
     "start": "node --disable-warning=ExperimentalWarning server/index.ts",
-    "test": "node --disable-warning=ExperimentalWarning --test \"server/**/*.test.ts\" \"client/**/*.test.ts\""
+    "test": "node --disable-warning=ExperimentalWarning --test \"server/**/*.test.ts\" \"client/**/*.test.ts\"",
+    "build:artifact": "npm run typecheck && node scripts/build-artifact.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

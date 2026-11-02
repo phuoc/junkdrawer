@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Item, Sorter } from "../../shared/types.ts";
+import { countdownFromText, isCountdown } from "../../shared/countdown.ts";
 import { api, LoginRequired } from "./api.ts";
+import { StoreUnavailable } from "./artifactApi.ts";
+
+const PREVIEW = import.meta.env.MODE === "artifact";
 
 /** Entries typed but not yet accepted by the server (offline, server down). */
 interface Pending {
@@ -37,6 +41,8 @@ const asLocalItem = (p: Pending): Item => ({
   category: "unsorted",
   title: null,
   emoji: null,
+  // a countdown entry shows its timer card right away, even before the server answers
+  countdown: isCountdown(p.text) ? countdownFromText(p.text, new Date()) : null,
   done: false,
   sorted_by: null,
   created_at: Date.now(),
@@ -58,6 +64,7 @@ export function useDrawer() {
 
   const fail = useCallback((err: unknown, message: string) => {
     if (err instanceof LoginRequired) setNeedsLogin(true);
+    else if (err instanceof StoreUnavailable) setStatus({ message: "can't open your drawer here: sign in to claude.ai, then reload" });
     else setStatus({ message });
   }, []);
 
@@ -75,14 +82,15 @@ export function useDrawer() {
     }
   }, [fail]);
 
-  // Re-fetch every 1.5s while anything is still being sorted (max ~30s).
+  // Re-fetch every 1.5s while anything is still being sorted, or a countdown's
+  // date is still being looked up (a web search can take a while; max ~60s).
   const pollWhileSorting = useCallback(
     (tries = 0) => {
       window.clearTimeout(pollTimer.current);
-      if (tries > 20) return;
+      if (tries > 40) return;
       pollTimer.current = window.setTimeout(async () => {
         const fresh = await refresh();
-        if (fresh?.some((x) => !x.sorted_by)) pollWhileSorting(tries + 1);
+        if (fresh?.some((x) => !x.sorted_by || x.countdown?.status === "looking")) pollWhileSorting(tries + 1);
       }, 1500);
     },
     [refresh]
@@ -128,6 +136,18 @@ export function useDrawer() {
       } catch (err) {
         flip(item.done);
         fail(err, "couldn't save that — offline?");
+      }
+    },
+    [fail]
+  );
+
+  const setCountdownDate = useCallback(
+    async (item: Item, date: string) => {
+      try {
+        const { item: saved } = await api.setCountdownDate(item.id, date);
+        setItems((prev) => prev.map((x) => (x.id === saved.id ? saved : x)));
+      } catch (err) {
+        fail(err, "couldn't save that date — offline?");
       }
     },
     [fail]
@@ -189,7 +209,15 @@ export function useDrawer() {
   }, [refresh, flush]);
 
   const shownStatus: Status | null =
-    status ?? (sorter === "rules" ? { message: "sorting by simple rules — add an ANTHROPIC_API_KEY on the server for AI sorting", soft: true } : null);
+    status ??
+    (sorter === "rules"
+      ? {
+          message: PREVIEW
+            ? "sorting by simple rules: allow this page to use Claude (and reload) for AI sorting"
+            : "sorting by simple rules — add an ANTHROPIC_API_KEY on the server for AI sorting",
+          soft: true,
+        }
+      : null);
 
-  return { items, needsLogin, status: shownStatus, add, toggle, remove, login };
+  return { items, needsLogin, status: shownStatus, add, toggle, setCountdownDate, remove, login };
 }
