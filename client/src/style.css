@@ -370,7 +370,6 @@ main.board-mode { max-width: none; padding: 0; }
     box-shadow: 5px 5px 0 var(--fg);
   }
   .board-mode #add .label { font-size: 12px; padding: 3px 8px; margin-bottom: 4px; }
-  .panel-min { top: 6px; right: 6px; width: 28px; height: 26px; font-size: 16px; }
   .board-mode #text { font-size: 16px; min-height: 48px; padding: 10px; margin-bottom: 10px; }
   .board-mode #filters { gap: 6px; margin-bottom: 8px; }
   .board-mode #filters button { padding: 5px 7px; font-size: 11px; }
@@ -406,6 +405,13 @@ main.board-mode { max-width: none; padding: 0; }
   line-height: 1;
 }
 .panel-min:hover, .panel-min:focus-visible { background: var(--fg); color: var(--bg); }
+@media (max-width: 700px) {
+  .panel-min { top: 6px; right: 6px; width: 28px; height: 26px; font-size: 16px; }
+}
+/* Scroll the panel's contents, not the panel, so the "–" button never scrolls away. */
+.board-mode .panel { overflow: visible; max-height: none; }
+.board-mode .panel-body { max-height: calc(100vh - 48px); overflow: auto; }
+.board-mode .panel.minimized #status { margin-top: 10px; max-width: 320px; }
 
 .board-mode .panel.minimized {
   width: auto;

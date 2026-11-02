@@ -25,7 +25,8 @@ function fitView(layout: Layout, el: HTMLElement): View {
   const bottom = tools ? H - tools.top + 12 : 80;
   // Beside the panel on a wide screen; below it on a phone, where it spans the top.
   // A minimized panel is a small tab at the top-left: keep the map below it.
-  const below = !!panel && (panel.width > W / 2 || panel.height < 80);
+  const minimized = !!document.querySelector(".panel.minimized");
+  const below = !!panel && (panel.width > W / 2 || minimized);
   const left = panel && !below ? panel.right + 24 : 12;
   const top = panel && below ? panel.bottom + 12 : 24;
   const area = { x: left, y: top, w: Math.max(120, W - left - 12), h: Math.max(120, H - top - bottom) };
@@ -66,10 +67,12 @@ interface Props {
   onInteract(): void;
   showEmoji: boolean;
   fullscreen: boolean;
+  /** The input panel is folded down to its tab. */
+  panelMinimized: boolean;
   onFullscreen(on: boolean): void;
 }
 
-export function Board({ items, filter, query, onToggle, onRemove, onSetCountdownDate, onInteract, showEmoji, fullscreen, onFullscreen }: Props) {
+export function Board({ items, filter, query, onToggle, onRemove, onSetCountdownDate, onInteract, showEmoji, fullscreen, panelMinimized, onFullscreen }: Props) {
   // Offsets and view change on every pointer move, so they live in plain state
   // and are saved when a gesture ends.
   const [offsets, setOffsets] = useState<Offsets>(() => readStored(OFFSETS, {}));
@@ -87,12 +90,29 @@ export function Board({ items, filter, query, onToggle, onRemove, onSetCountdown
 
   const layout = useMemo(() => computeLayout(items, offsets), [items, offsets]);
 
+  // The view FIT last produced; still current means the user hasn't moved the map since.
+  const fittedView = useRef<View | null>(null);
   const fit = () => {
     if (!boardRef.current) return;
     const next = fitView(layout, boardRef.current);
+    fittedView.current = next;
     setView(next);
     writeStored(VIEW, next);
   };
+  // When the free space changes (panel minimized or restored, full screen on or
+  // off), re-frame a map that is still as FIT left it, once the panel has moved.
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  const firstFrame = useRef(true);
+  useEffect(() => {
+    if (firstFrame.current) {
+      firstFrame.current = false;
+      return;
+    }
+    if (!fittedView.current || latest.current.view !== fittedView.current) return;
+    const raf = requestAnimationFrame(() => fitRef.current());
+    return () => cancelAnimationFrame(raf);
+  }, [fullscreen, panelMinimized]);
   // First visit on this device: frame the whole map once the items arrive.
   const fitted = useRef(view !== null);
   useEffect(() => {
