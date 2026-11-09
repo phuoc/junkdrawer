@@ -132,6 +132,12 @@ export function App() {
 
   return (
     <main className={board ? "board-mode" : undefined}>
+      {/* On touch screens the list puts the input at the bottom, so the name moves up here */}
+      {!board && !needsLogin && (
+        <p className="brand" aria-hidden="true">
+          <span className="label">JUNK DRAWER</span>
+        </p>
+      )}
       <div className={`panel${minimized ? " minimized" : ""}`} hidden={fullscreen}>
         {minimized && (
           <button type="button" className="panel-open" ref={openTabRef} onClick={openPanel} aria-label="open the input panel">

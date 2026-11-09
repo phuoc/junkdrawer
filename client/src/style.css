@@ -488,3 +488,76 @@ main.board-mode { max-width: none; padding: 0; }
 @media (max-width: 700px) {
   .ios .board-mode #text { font-size: max(16px, calc(16px * var(--zoom-out, 1))) !important; }
 }
+
+/* ======================= input at the bottom on touch screens ======================= */
+/* On phones and tablets the input sits at the bottom, within reach of a thumb:
+   pinned to the bottom of the list while you scroll, and the board's panel
+   docks at the bottom with the map toolbar at the top. --kb (keyboardInset.ts)
+   lifts bottom-pinned things above the on-screen keyboard. */
+.brand { display: none; margin: 0 0 12px; }
+
+@media (max-width: 700px), (pointer: coarse) {
+  /* -- list -- */
+  main:not(.board-mode) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: 0;
+  }
+  main:not(.board-mode) .panel,
+  main:not(.board-mode) .panel-body { display: contents; }
+  main:not(.board-mode) .brand { display: block; order: 0; }
+  main:not(.board-mode) #login { order: 0; }
+  main:not(.board-mode) #filters { order: 1; }
+  main:not(.board-mode) #status { order: 2; }
+  main:not(.board-mode) #drawer,
+  main:not(.board-mode) .empty { order: 3; }
+  main:not(.board-mode) #add {
+    order: 4;
+    position: sticky;
+    top: auto;
+    bottom: var(--kb, 0px);
+    margin: auto -16px 0; /* auto top margin: sits at the bottom even when the list is short */
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-top: var(--line);
+    background: var(--bg);
+    z-index: 5;
+  }
+  main:not(.board-mode) #drawer { margin-bottom: 16px; }
+  main:not(.board-mode) #add .label {
+    /* the name is shown at the top instead; keep the label for screen readers */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  main:not(.board-mode) #text { margin-bottom: 0; min-height: 56px; box-shadow: 6px 6px 0 var(--fg); }
+  main:not(.board-mode) #text:focus { box-shadow: 3px 3px 0 var(--fg); transform: translate(3px, 3px); }
+
+  /* -- board -- */
+  .board-mode .panel {
+    top: auto;
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--kb, 0px));
+    display: flex;
+    flex-direction: column;
+  }
+  .board-mode .panel-body { order: 2; display: flex; flex-direction: column; }
+  .board-mode .panel > #status { order: 1; margin: 0 40px 8px 0; } /* clear of the "–" button */
+  .board-mode #add { display: contents; } /* lets the text box sit below the filters */
+  .board-mode #add .label { order: 0; align-self: flex-start; }
+  .board-mode #filters { order: 1; }
+  .board-mode #text { order: 2; }
+  .board-mode .hint { order: 3; }
+  /* minimized: any message above the tab, the tab nearest the thumb */
+  .board-mode .panel.minimized { align-items: flex-start; }
+  .board-mode .panel.minimized > #status { margin: 0 0 8px; }
+  .board-mode .panel.minimized > .panel-open { order: 2; }
+
+  .board-tools {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
+}

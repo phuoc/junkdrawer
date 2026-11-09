@@ -3,8 +3,10 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import "./style.css";
 import { installZoomGuard } from "./zoomGuard.ts";
+import { installKeyboardInset } from "./keyboardInset.ts";
 
 installZoomGuard();
+installKeyboardInset();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Item } from "../../../shared/types.ts";
-import { computeLayout, hubKey, relatedLinks } from "./layout.ts";
+import { computeLayout, freeArea, hubKey, relatedLinks } from "./layout.ts";
 
 let t = 1000;
 const item = (text: string, category: string, extra: Partial<Item> = {}): Item => ({
@@ -63,4 +63,15 @@ test("related links join different compartments on a shared meaningful word", ()
       [items[1].id, items[3].id, "mom"],
     ]
   );
+});
+
+test("free area: panels and toolbars are cut off along the edge that loses least space", () => {
+  // computer: tall panel at the top-left, toolbar along the bottom -> map to the right of the panel
+  assert.deepEqual(freeArea(1440, 900, [{ left: 16, top: 16, right: 452, bottom: 376 }, { left: 970, top: 838, right: 1424, bottom: 884 }]), { x: 468, y: 12, w: 960, h: 814 });
+  // phone: toolbar along the top, input panel along the bottom -> map between them
+  assert.deepEqual(freeArea(390, 664, [{ left: 8, top: 420, right: 382, bottom: 656 }, { left: 8, top: 8, right: 382, bottom: 48 }]), { x: 12, y: 60, w: 366, h: 348 });
+  // a small minimized tab in a corner takes a strip off the top, not a column
+  assert.equal(freeArea(1440, 900, [{ left: 16, top: 16, right: 210, bottom: 60 }]).y, 72);
+  // hidden (0x0) panels are ignored
+  assert.deepEqual(freeArea(400, 600, [{ left: 0, top: 0, right: 0, bottom: 0 }]), { x: 12, y: 12, w: 376, h: 576 });
 });

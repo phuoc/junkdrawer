@@ -137,3 +137,24 @@ export function relatedLinks(items: Item[], maxPerItem = 2, maxTotal = 80): Link
   }
   return links;
 }
+
+/**
+ * The part of the board not covered by the input panel and the toolbar.
+ * Each one is cut off along whichever screen edge loses the least space:
+ * a tall panel at the left on a computer, a bar along the top or bottom on a
+ * phone, a small minimized tab in a corner. Hidden ones measure 0×0 and are skipped.
+ */
+export function freeArea(W: number, H: number, obstacles: { left: number; top: number; right: number; bottom: number }[]) {
+  let [left, top, right, bottom] = [12, 12, W - 12, H - 12];
+  for (const r of obstacles) {
+    if (r.right <= r.left || r.bottom <= r.top) continue;
+    const cuts = [
+      { lost: r.right * H, apply: () => (left = Math.max(left, r.right + 16)) },
+      { lost: (W - r.left) * H, apply: () => (right = Math.min(right, r.left - 16)) },
+      { lost: r.bottom * W, apply: () => (top = Math.max(top, r.bottom + 12)) },
+      { lost: (H - r.top) * W, apply: () => (bottom = Math.min(bottom, r.top - 12)) },
+    ];
+    cuts.sort((a, b) => a.lost - b.lost)[0].apply();
+  }
+  return { x: left, y: top, w: Math.max(120, right - left), h: Math.max(120, bottom - top) };
+}

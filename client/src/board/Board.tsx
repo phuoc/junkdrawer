@@ -4,7 +4,7 @@ import { matches, type Filter } from "../filters.ts";
 import { readStored, useStoredState, writeStored } from "../storage.ts";
 import { ItemRow } from "../components/ItemRow.tsx";
 import { categoryStyle } from "../categoryColors.ts";
-import { bounds, computeLayout, relatedLinks, type Layout, type Offsets, type Point } from "./layout.ts";
+import { bounds, computeLayout, freeArea, relatedLinks, type Layout, type Offsets, type Point } from "./layout.ts";
 
 type LinkMode = "all" | "hubs" | "off";
 interface View extends Point {
@@ -17,19 +17,13 @@ const clampK = (k: number) => Math.min(2, Math.max(0.15, k));
 
 /** Zoom and pan so the whole map fits in the space the capture panel and toolbar leave free. */
 function fitView(layout: Layout, el: HTMLElement): View {
-  const { width: W, height: H } = el.getBoundingClientRect();
-  // A hidden panel (full screen) measures 0×0 and leaves the whole board free.
-  const rect = document.querySelector(".panel")?.getBoundingClientRect();
-  const panel = rect && rect.width > 0 ? rect : undefined;
-  const tools = document.querySelector(".board-tools")?.getBoundingClientRect();
-  const bottom = tools ? H - tools.top + 12 : 80;
-  // Beside the panel on a wide screen; below it on a phone, where it spans the top.
-  // A minimized panel is a small tab at the top-left: keep the map below it.
-  const minimized = !!document.querySelector(".panel.minimized");
-  const below = !!panel && (panel.width > W / 2 || minimized);
-  const left = panel && !below ? panel.right + 24 : 12;
-  const top = panel && below ? panel.bottom + 12 : 24;
-  const area = { x: left, y: top, w: Math.max(120, W - left - 12), h: Math.max(120, H - top - bottom) };
+  const box = el.getBoundingClientRect();
+  const { width: W, height: H } = box;
+  const obstacles = [".panel", ".board-tools"]
+    .map((s) => document.querySelector(s)?.getBoundingClientRect())
+    .filter((r): r is DOMRect => !!r)
+    .map((r) => ({ left: r.left - box.left, top: r.top - box.top, right: r.right - box.left, bottom: r.bottom - box.top }));
+  const area = freeArea(W, H, obstacles);
   const b = bounds(layout);
   const k = clampK(Math.min(area.w / (b.maxX - b.minX), area.h / (b.maxY - b.minY), 1.1));
   const cx = (b.minX + b.maxX) / 2;
