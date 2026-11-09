@@ -477,3 +477,14 @@ main.board-mode { max-width: none; padding: 0; }
 .board .card.countdown-card { width: 260px; }
 .card .cd-clock span { min-width: 40px; }
 .card .cd-clock b { font-size: 19px; }
+
+/* ---- iOS: no zoom-in when tapping a text field ---- */
+/* Safari zooms in on a field whose text shows smaller than 16px, which a
+   zoomed-out page (Safari Page Zoom) causes even for 16-22px text. zoomGuard.ts
+   sets --zoom-out (2 = page at 50%) so fields stay at least 16px on screen. */
+.ios #text, .ios #pass { font-size: max(22px, calc(16px * var(--zoom-out, 1))) !important; }
+.ios .board-mode #text { font-size: max(18px, calc(16px * var(--zoom-out, 1))) !important; }
+.ios #find, .ios .cd-date input { font-size: max(16px, calc(16px * var(--zoom-out, 1))) !important; }
+@media (max-width: 700px) {
+  .ios .board-mode #text { font-size: max(16px, calc(16px * var(--zoom-out, 1))) !important; }
+}

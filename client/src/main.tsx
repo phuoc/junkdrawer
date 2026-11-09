@@ -2,6 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import "./style.css";
+import { installZoomGuard } from "./zoomGuard.ts";
+
+installZoomGuard();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
